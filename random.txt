@@ -1,0 +1,987 @@
+# SWASTHYATRA
+
+## Global Healthcare Navigation Operating System
+
+### Product Requirements Document (PRD), System Architecture & Founder Blueprint
+
+---
+
+# 1. Executive Summary
+
+## Vision
+
+SwasthYatra is a Healthcare Navigation Operating System designed for travelers navigating unfamiliar healthcare systems.
+
+The platform helps users:
+
+* Understand symptoms
+* Assess severity
+* Find medication equivalents
+* Discover trusted providers
+* Communicate across language barriers
+* Share healthcare history
+* Continue care across locations
+* Capture outcomes
+
+The objective is not diagnosis.
+
+The objective is healthcare navigation.
+
+---
+
+# 2. Problem Statement
+
+Healthcare becomes fragmented when people travel.
+
+Travelers frequently encounter:
+
+### Medication Confusion
+
+Users know medicines by brand names rather than active ingredients.
+
+Examples:
+
+| Country | Brand    |
+| ------- | -------- |
+| India   | Crocin   |
+| USA     | Tylenol  |
+| UK      | Calpol   |
+| Japan   | Bufferin |
+
+Most travelers do not know equivalent medications abroad.
+
+---
+
+### Language Barriers
+
+Communication breaks down during:
+
+* Clinical consultations
+* Pharmacy interactions
+* Emergency situations
+* Prescription explanations
+
+Traditional translators lack medical context.
+
+---
+
+### Care Escalation Uncertainty
+
+Travelers often ask:
+
+* Should I rest?
+* Should I visit a pharmacy?
+* Should I see a doctor?
+* Is this an emergency?
+
+The uncertainty is the problem.
+
+---
+
+### Provider Trust
+
+Travelers struggle to evaluate:
+
+* Hospitals
+* Clinics
+* Pharmacies
+* Telemedicine services
+
+Trust is often more important than discovery.
+
+---
+
+### Healthcare Continuity
+
+Travelers may:
+
+* Lose medication
+* Run out of medication
+* Need prescription refills
+* Need local alternatives
+
+Healthcare history is rarely portable.
+
+---
+
+# 3. Core Product Thesis
+
+Most healthcare products are:
+
+* Doctor-centric
+* Hospital-centric
+* Appointment-centric
+
+SwasthYatra is:
+
+### Journey-Centric
+
+Everything revolves around:
+
+TravelHealthSession
+
+The platform tracks healthcare journeys rather than isolated interactions.
+
+---
+
+# 4. Core Entity
+
+## TravelHealthSession
+
+Central object powering the entire platform.
+
+### Attributes
+
+* User
+* Country
+* City
+* Coordinates
+* Symptoms
+* Symptom Duration
+* Severity
+* Allergies
+* Medications
+* Insurance
+* Provider Context
+* Interpreter Context
+* Outcomes
+* Recommendations
+
+Every subsystem reads from and writes to this object.
+
+---
+
+# 5. Platform Architecture
+
+## Core Systems
+
+### Agent OS
+
+Healthcare decision orchestration layer.
+
+Responsibilities:
+
+* Reasoning
+* Planning
+* Execution
+* Reflection
+* Replanning
+
+---
+
+### Healthcare Graph
+
+Global intelligence layer connecting:
+
+* Symptoms
+* Conditions
+* Providers
+* Medications
+* Languages
+* Countries
+* Outcomes
+
+---
+
+### Medication Intelligence
+
+Deterministic medication lookup system.
+
+Responsibilities:
+
+* Ingredient mapping
+* Brand equivalence
+* OTC rules
+* Country-specific availability
+
+---
+
+### Provider Discovery
+
+Healthcare inventory and search layer.
+
+Provider Types:
+
+* Hospitals
+* Clinics
+* Pharmacies
+* Telemedicine
+
+---
+
+### Medical Interpreter
+
+Context-aware healthcare communication system.
+
+Supports:
+
+* Speech-to-text
+* Translation
+* Context injection
+* Text-to-speech
+
+---
+
+### Health Passport
+
+Portable healthcare profile.
+
+Contains:
+
+* Conditions
+* Allergies
+* Medications
+* Vaccinations
+* Insurance
+* Emergency contacts
+
+---
+
+### Medical Memory
+
+Persistent healthcare knowledge.
+
+Maintains:
+
+* Conditions
+* Allergies
+* Medication history
+* Vaccinations
+* Provider interactions
+
+---
+
+### Outcome Intelligence
+
+Captures:
+
+* Treatments
+* Medication effectiveness
+* Provider outcomes
+* Recovery timelines
+
+---
+
+### Organization Layer
+
+Supports:
+
+* Hospitals
+* Clinics
+* Pharmacies
+* Healthcare operators
+
+---
+
+# 6. System Workflow
+
+## Navigation Flow
+
+START
+
+↓
+
+INTAKE
+
+↓
+
+TRIAGE
+
+↓
+
+SEVERITY ASSESSMENT
+
+↓
+
+ROUTER
+
+Branches:
+
+### Self-Care
+
+Home treatment guidance
+
+### Pharmacy
+
+Medication lookup + pharmacy discovery
+
+### Clinic
+
+Provider recommendation + interpreter
+
+### Hospital
+
+Urgent escalation
+
+### Emergency
+
+Immediate intervention workflow
+
+---
+
+# 7. Health Vault
+
+## Purpose
+
+Medical document management system.
+
+Supported Documents:
+
+* Prescriptions
+* Reports
+* Insurance documents
+* Vaccination records
+* Medical certificates
+
+---
+
+## Processing Pipeline
+
+Upload
+
+↓
+
+OCR
+
+↓
+
+Translation
+
+↓
+
+Information Extraction
+
+↓
+
+Review Queue
+
+↓
+
+Medical Memory
+
+↓
+
+Health Passport
+
+---
+
+# 8. Medical Memory System
+
+## Purpose
+
+Persistent health understanding.
+
+Stores:
+
+* Conditions
+* Allergies
+* Medications
+* Vaccinations
+* Insurance
+* Provider history
+
+---
+
+## Memory Candidate Workflow
+
+Documents never directly modify memory.
+
+Document
+
+↓
+
+Extraction
+
+↓
+
+MedicalMemoryCandidate
+
+↓
+
+Review
+
+↓
+
+Approval
+
+↓
+
+MedicalMemory
+
+This creates a critical trust boundary.
+
+---
+
+# 9. Health Passport
+
+## Portable Healthcare Identity
+
+Provides healthcare information anywhere.
+
+### Contains
+
+* Conditions
+* Allergies
+* Medications
+* Vaccinations
+* Insurance
+* Emergency contacts
+* Provider notes
+
+---
+
+## Sharing Workflow
+
+Patient
+
+↓
+
+Generate Secure Link
+
+↓
+
+Provider Access
+
+↓
+
+Audit Log
+
+↓
+
+Context View
+
+Every access is tracked.
+
+---
+
+# 10. Medical Interpreter
+
+## Differentiation
+
+Not a translation tool.
+
+A healthcare communication layer.
+
+---
+
+## Context Inputs
+
+* Symptoms
+* Conditions
+* Allergies
+* Medication history
+* Current provider
+* Severity assessment
+
+---
+
+## Communication Pipeline
+
+Patient Audio
+
+↓
+
+Speech Recognition
+
+↓
+
+Translation
+
+↓
+
+Medical Context Injection
+
+↓
+
+Response Generation
+
+↓
+
+Speech Synthesis
+
+↓
+
+Provider
+
+Reverse flow supported.
+
+---
+
+# 11. Healthcare Graph
+
+## Core Strategic Asset
+
+Graph Structure:
+
+Traveler
+
+↔ Symptoms
+
+↔ Medication
+
+↔ Provider
+
+↔ Country
+
+↔ Language
+
+↔ Outcome
+
+Each interaction enriches the graph.
+
+---
+
+# 12. Medication Intelligence Graph
+
+## Objective
+
+Medication equivalence without hallucinations.
+
+---
+
+## Entities
+
+### Medication
+
+Commercial brands
+
+### ActiveIngredient
+
+Chemical composition
+
+### CountryMedication
+
+Country-specific mappings
+
+### MedicationEquivalent
+
+Cross-country equivalence
+
+### OTCStatus
+
+Prescription requirements
+
+---
+
+## Example
+
+Paracetamol
+
+India → Crocin
+
+USA → Tylenol
+
+Japan → Bufferin
+
+Mexico → Tempra
+
+---
+
+# 13. Provider Discovery
+
+## Data Sources
+
+### OpenStreetMap
+
+Global provider inventory
+
+### Geoapify
+
+Geospatial search
+
+### Google Places
+
+Enhanced discovery
+
+### Government Registries
+
+Verification source
+
+---
+
+## Provider Metadata
+
+* Languages
+* Specialties
+* Insurance acceptance
+* Working hours
+* Cost indicators
+* Tourist friendliness
+
+---
+
+# 14. Outcome Intelligence
+
+## Purpose
+
+Capture real-world healthcare effectiveness.
+
+Tracks:
+
+* Symptoms
+* Provider
+* Treatment
+* Medication
+* Country
+* Outcome
+
+---
+
+## Generated Assets
+
+### OutcomeInsight
+
+General observations
+
+### MedicationOutcome
+
+Medication effectiveness
+
+### ProviderOutcome
+
+Provider performance
+
+These form a proprietary dataset.
+
+---
+
+# 15. Agent Operating System
+
+Inspired by:
+
+* Cursor
+* Claude Code
+* Devin
+
+Not chatbot architecture.
+
+---
+
+## Agent Loop
+
+Goal
+
+↓
+
+Reason
+
+↓
+
+Plan
+
+↓
+
+Execute
+
+↓
+
+Reflect
+
+↓
+
+Replan
+
+---
+
+## Core Components
+
+reasoning.ts
+
+planner.ts
+
+executor.ts
+
+reflection.ts
+
+replanner.ts
+
+timeline.ts
+
+memory.ts
+
+goals.ts
+
+approvals.ts
+
+confidence.ts
+
+---
+
+# 16. Agent Personas
+
+### Patient Companion
+
+Traveler-facing assistant.
+
+### Doctor Copilot
+
+Provider support.
+
+### Pharmacist Copilot
+
+Medication workflows.
+
+### Medical Assistant
+
+Administrative workflows.
+
+### Organization Operator
+
+Operational management.
+
+### Organization Admin
+
+Governance and oversight.
+
+---
+
+# 17. Security Architecture
+
+## Core Principles
+
+### Audit Logging
+
+All critical actions recorded.
+
+### Ownership Validation
+
+Resource access verification.
+
+### Approval Gates
+
+Required for:
+
+* Sharing
+* Notifications
+* Sensitive updates
+
+### Provenance Tracking
+
+Every memory item records:
+
+* Source
+* Confidence
+* Verification status
+* Reviewer
+
+---
+
+# 18. Organization Layer
+
+## Roles
+
+PATIENT
+
+DOCTOR
+
+PHARMACIST
+
+MEDICAL_ASSISTANT
+
+ORGANIZATION_OPERATOR
+
+ORGANIZATION_ADMIN
+
+---
+
+## Organization Features
+
+* Team management
+* Assignments
+* Analytics
+* Reviews
+* Approvals
+* Operational dashboards
+
+---
+
+# 19. Technical Architecture
+
+## Frontend
+
+* Next.js 16
+* React 19
+* TypeScript
+* TailwindCSS
+* shadcn/ui
+* Radix UI
+* React Hook Form
+* Zod
+* Recharts
+
+---
+
+## Backend
+
+* FastAPI
+* Python 3.12
+* LangGraph
+* SQLAlchemy
+* Alembic
+* Celery
+* Redis
+
+---
+
+## Database
+
+* PostgreSQL
+* PostGIS
+* pgvector
+
+---
+
+## AI Layer
+
+### Gemini
+
+Used for:
+
+* Document understanding
+* Clinical summaries
+* Memory extraction
+* Outcome intelligence
+
+### Groq
+
+Used for:
+
+* Reasoning
+* Planning
+* Reflection
+* Replanning
+
+Future gateway support:
+
+* Claude
+* GPT
+* DeepSeek
+* Qwen
+
+---
+
+## Voice Layer
+
+* Deepgram
+* ElevenLabs
+* LiveKit
+
+---
+
+# 20. Monorepo Structure
+
+root/
+
+frontend/
+
+backend/
+
+packages/
+
+database/
+
+types/
+
+shared/
+
+agent-core/
+
+healthcare-graph/
+
+docs/
+
+---
+
+# 21. MVP Scope
+
+## Phase 0
+
+Build:
+
+* TravelHealthSession
+* Navigation Agent
+* Medication Lookup
+* Provider Discovery
+* Interpreter
+* Outcome Capture
+
+Nothing else.
+
+---
+
+## Phase 1
+
+Medication Intelligence Graph
+
+Target:
+
+* 20 countries
+* 200 active ingredients
+
+---
+
+## Phase 2
+
+Provider Graph
+
+Bootstrap:
+
+* OSM
+* Geoapify
+* Google Places
+
+---
+
+## Phase 3
+
+Outcome Graph
+
+Capture:
+
+* Symptoms
+* Treatments
+* Medications
+* Outcomes
+
+---
+
+# 22. Long-Term Vision
+
+SwasthYatra becomes the Global Healthcare Navigation Layer.
+
+A traveler anywhere in the world should be able to say:
+
+"I need help."
+
+The system should:
+
+Understand Context
+
+↓
+
+Determine Severity
+
+↓
+
+Find Medication
+
+↓
+
+Find Trusted Care
+
+↓
+
+Translate Communication
+
+↓
+
+Track Outcomes
+
+↓
+
+Improve Future Recommendations
+
+without requiring the traveler to understand the local healthcare system.
+
+This is the complete SwasthYatra founder blueprint and intended platform architecture.
+

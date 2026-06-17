@@ -1,0 +1,6 @@
+export { syncFromOsm } from "./workers/osm-sync"
+export { syncFromGeoapify } from "./workers/geoapify-sync"
+export { normalizeOsmProvider, normalizeGeoapifyProvider } from "./normalizer"
+export { deduplicateProvider } from "./normalizer/deduplicator"
+export { runProviderSync } from "./sync-scheduler"
+export type { SyncResult, SyncJobResult } from "./sync-scheduler"

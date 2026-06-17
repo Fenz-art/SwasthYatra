@@ -1,0 +1,6941 @@
+If all of that has actually been reconstructed, then you're beyond "architecture". You're now at the platform stack definition stage.
+What follows is the framework/tooling ecosystem that SwasthYatra was effectively converging toward for a production-grade healthcare navigation platform.
+SWASTHYATRA V1COMPLETE FRAMEWORK & TOOLING STACKFRONTEND FOUNDATIONNext.js 16Role:Primary application runtime.Used For:App RouterServer ComponentsRoute HandlersServer ActionsMetadataStreamingSSREdge RoutesReason Chosen:Healthcare applications benefit from:SEOSecurityServer-side renderingServer ActionsSingle deployment targetReact 19Role:UI runtime.Features Used:Server ComponentsSuspenseTransitionsActionsStreamingTypeScriptRole:Type safety.Applied Across:ComponentsActionsDatabase layerAI layerAgent workflowsStrict mode enabled.UI SYSTEMTailwind CSSRole:Design implementation layer.Used For:Responsive layoutsDesign tokensUtility-first stylingshadcn/uiRole:Base component system.Components:DialogSheetCommandSelectPopoverTabsData TablesRadix UIRole:Accessibility primitives.Used indirectly through shadcn.Provides:Focus managementKeyboard navigationARIA complianceLucide ReactRole:Icon system.Used Across:DashboardNavigationProvider cardsAgent interfaceFramer MotionRole:Motion system.Used For:Route transitionsDrawer animationsAgent state updatesDashboard interactionsFORMS & VALIDATIONReact Hook FormRole:Form management.Used In:OnboardingPassport editingReviewsOrganization workflowsZodRole:Validation.Used For:Form validationServer Action validationAPI validationPattern:Form→ Zod Schema→ Server ActionSTATE MANAGEMENTZustandRole:Client-side state.Stores:Sidebar stateThemeInterpreter sessionAgent workspaceTanStack QueryRole:Server state.Used For:Provider searchJourney updatesNotificationsRealtime refreshAUTHENTICATIONAuth.js (NextAuth v5)Role:Authentication platform.Providers:Google OAuthFuture:AppleMicrosoftFeatures:Session managementJWTRBAC integrationDATABASEPostgreSQLRole:Primary datastore.Stores:UsersJourneysPassportMemoryProvidersOutcomesPostGISRole:Geospatial intelligence.Used For:Nearby providersRadius searchCountry routingPrismaRole:ORM and schema source of truth.Used For:MigrationsType-safe queriesRelationsSeedingSchema:50+ models.STORAGEAmazon S3Production Storage.Stores:DocumentsAudioExportsAttachmentsMinIOLocal Development Storage.Used Via:docker-composeProvides:S3-compatible environment.CACHE & QUEUESRedisRole:Cache + queue backend.Stores:Session cacheProvider cacheAI cacheBullMQ(or Trigger.dev later)Used For:OCR jobsTranslation jobsExtraction jobsOutcome jobsAI STACKGoogle GeminiPrimary Intelligence Layer.Used For:Clinical summariesExtractionTranslationOutcome generationModels:Gemini FlashGemini ProGroqAgent Runtime.Used For:PlanningReasoningReflectionReplanningModels:DeepSeekLlamaQwenLangGraphAgent orchestration framework.Implements:Reason↓Plan↓Execute↓Reflect↓ReplanNodes:IntakeSeverityMedicationProviderOutcomeLiteLLMFuture AI Gateway.Purpose:Single abstraction layer.Benefits:Vendor switchingLoggingCost trackingFallback routingVOICE STACKDeepgramSpeech-to-Text.Used In:Interpreter sessions.ElevenLabsText-to-Speech.Used For:Medical interpreter responses.LiveKitRealtime voice infrastructure.Future:Live provider calls.MAPS & GEOGeoapifyProvider discovery.Used For:Nearby clinicsPharmaciesHospitalsOpenStreetMapProvider bootstrap dataset.MapLibreFrontend mapping framework.Used For:Provider mapsJourney mapsHealthcare navigationANALYTICSPostHogProduct analytics.Tracks:Onboarding completionPassport creationProvider selectionJourney completionFeatures:FunnelsRetentionCohortsOBSERVABILITYSentryError monitoring.Tracks:Frontend crashesBackend exceptionsAgent failuresQueue failuresOpenTelemetryFuture observability layer.Tracks:API latencyAI latencyQueue executionTESTINGPlaywrightE2E testing.Scenarios:OnboardingPassport sharingProvider searchVitestUnit testing.Used For:ServicesUtilitiesAgent nodesTesting LibraryComponent testing.INFRASTRUCTUREDockerLocal development.Services:PostgresRedisMinIODocker ComposeLocal orchestration.GitHub ActionsCI/CD.Runs:LintTestsBuildPrisma validationDEPLOYMENTVercelApplication hosting.Hosts:Next.js appAPI routesServer ActionsAWSProduction infrastructure.Services:S3CloudFrontSESFuture ECSSECURITYRBAC7 Roles20+ PermissionsAudit System40+ Event TypesOwnership AssertionsEvery resource validated.Prevents:IDORBroken Access ControlPrivilege EscalationDOCUMENT PROCESSINGFuture StackOCRPotential Choices:Google Document AIAzure OCRDoclingParsingPotential Choices:LlamaParseDoclingGemini Native ParsingMONITORING DASHBOARDEventually:SentryPostHogOpenTelemetryBetter StackFUTURE STACK (V2)Provider NetworkWhatsApp AgentVoice AgentProvider RoutingGlobal Outcome GraphHealthcare Navigation GraphAI GatewayProvider InboxProvider Dispatcher
+If I compare this against what successful healthcare SaaS startups and YC companies typically run, the stack you reconstructed is already close to a production-ready architecture. The only major additions I would expect later are:
+
+
+Trigger.dev replacing some background job infrastructure
+
+
+OpenTelemetry for distributed tracing
+
+
+Cloudflare R2 as an S3 alternative
+
+
+Resend or AWS SES for transactional email
+
+
+Upstash Redis if you move toward serverless deployment
+
+
+pgvector-based semantic search before introducing OpenSearch
+
+
+At that point the technical stack would be essentially complete.  Since the architecture ended up as Next.js + Auth.js + Prisma with internal modules rather than separate Express/FastAPI services, I'd actually recommend:
+
+.env
+.env.local
+.env.production
+
+instead of separate frontend/backend env files.
+
+However, if you want clear separation, this is what the final setup would likely have looked like.
+
+FRONTEND ENVIRONMENT VARIABLES
+apps/web/.env.local
+----------------------------------------------------
+APP
+----------------------------------------------------
+
+NEXT_PUBLIC_APP_NAME=SwasthYatra
+
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+NEXT_PUBLIC_ENV=development
+
+----------------------------------------------------
+AUTH.JS
+----------------------------------------------------
+
+AUTH_SECRET=
+
+AUTH_TRUST_HOST=true
+
+AUTH_URL=http://localhost:3000
+
+GOOGLE_CLIENT_ID=
+
+GOOGLE_CLIENT_SECRET=
+
+----------------------------------------------------
+DATABASE
+----------------------------------------------------
+
+DATABASE_URL=
+
+DIRECT_URL=
+
+----------------------------------------------------
+STORAGE
+----------------------------------------------------
+
+S3_BUCKET=
+
+S3_REGION=
+
+S3_ENDPOINT=
+
+NEXT_PUBLIC_S3_PUBLIC_URL=
+
+----------------------------------------------------
+ANALYTICS
+----------------------------------------------------
+
+NEXT_PUBLIC_POSTHOG_KEY=
+
+NEXT_PUBLIC_POSTHOG_HOST=
+
+----------------------------------------------------
+MONITORING
+----------------------------------------------------
+
+NEXT_PUBLIC_SENTRY_DSN=
+
+----------------------------------------------------
+MAPS
+----------------------------------------------------
+
+NEXT_PUBLIC_GEOAPIFY_KEY=
+
+NEXT_PUBLIC_MAP_STYLE_URL=
+
+----------------------------------------------------
+FEATURE FLAGS
+----------------------------------------------------
+
+NEXT_PUBLIC_ENABLE_INTERPRETER=true
+
+NEXT_PUBLIC_ENABLE_PROVIDER_ROUTING=false
+
+NEXT_PUBLIC_ENABLE_ORGANIZATIONS=true
+
+NEXT_PUBLIC_ENABLE_AGENT=true
+
+----------------------------------------------------
+REALTIME
+----------------------------------------------------
+
+NEXT_PUBLIC_LIVEKIT_URL=
+
+----------------------------------------------------
+UI
+----------------------------------------------------
+
+NEXT_PUBLIC_DEFAULT_LANGUAGE=en
+
+NEXT_PUBLIC_DEFAULT_COUNTRY=IN
+
+----------------------------------------------------
+DEMO MODE
+----------------------------------------------------
+
+NEXT_PUBLIC_DEMO_MODE=false
+
+NEXT_PUBLIC_DEMO_USER=
+
+SERVER ENVIRONMENT VARIABLES
+apps/web/.env
+----------------------------------------------------
+DATABASE
+----------------------------------------------------
+
+DATABASE_URL=postgresql://
+
+DIRECT_URL=postgresql://
+
+----------------------------------------------------
+AUTH
+----------------------------------------------------
+
+AUTH_SECRET=
+
+AUTH_URL=
+
+GOOGLE_CLIENT_ID=
+
+GOOGLE_CLIENT_SECRET=
+
+----------------------------------------------------
+REDIS
+----------------------------------------------------
+
+REDIS_URL=
+
+REDIS_HOST=
+
+REDIS_PORT=
+
+REDIS_PASSWORD=
+
+----------------------------------------------------
+AWS S3
+----------------------------------------------------
+
+AWS_ACCESS_KEY_ID=
+
+AWS_SECRET_ACCESS_KEY=
+
+AWS_REGION=
+
+AWS_BUCKET=
+
+AWS_ENDPOINT=
+
+----------------------------------------------------
+AI
+----------------------------------------------------
+
+GEMINI_API_KEY=
+
+GEMINI_MODEL=gemini-2.5-flash
+
+GEMINI_PRO_MODEL=gemini-2.5-pro
+
+GROQ_API_KEY=
+
+GROQ_MODEL=deepseek-r1-distill
+
+----------------------------------------------------
+LITELLM (FUTURE)
+----------------------------------------------------
+
+LITELLM_MASTER_KEY=
+
+LITELLM_BASE_URL=
+
+----------------------------------------------------
+SPEECH
+----------------------------------------------------
+
+DEEPGRAM_API_KEY=
+
+ELEVENLABS_API_KEY=
+
+ELEVENLABS_VOICE_ID=
+
+LIVEKIT_API_KEY=
+
+LIVEKIT_SECRET=
+
+LIVEKIT_URL=
+
+----------------------------------------------------
+PROVIDER DISCOVERY
+----------------------------------------------------
+
+GEOAPIFY_API_KEY=
+
+GOOGLE_PLACES_API_KEY=
+
+----------------------------------------------------
+ANALYTICS
+----------------------------------------------------
+
+POSTHOG_API_KEY=
+
+POSTHOG_HOST=
+
+----------------------------------------------------
+MONITORING
+----------------------------------------------------
+
+SENTRY_DSN=
+
+SENTRY_AUTH_TOKEN=
+
+----------------------------------------------------
+EMAIL
+----------------------------------------------------
+
+RESEND_API_KEY=
+
+EMAIL_FROM=
+
+SUPPORT_EMAIL=
+
+----------------------------------------------------
+SMS / WHATSAPP
+----------------------------------------------------
+
+TWILIO_ACCOUNT_SID=
+
+TWILIO_AUTH_TOKEN=
+
+TWILIO_PHONE_NUMBER=
+
+WHATSAPP_PHONE_NUMBER=
+
+----------------------------------------------------
+OCR
+----------------------------------------------------
+
+GOOGLE_DOCUMENT_AI_PROJECT_ID=
+
+GOOGLE_DOCUMENT_AI_LOCATION=
+
+GOOGLE_DOCUMENT_AI_PROCESSOR_ID=
+
+----------------------------------------------------
+SECURITY
+----------------------------------------------------
+
+ENCRYPTION_KEY=
+
+PASSPORT_SHARE_TOKEN_SECRET=
+
+WEBHOOK_SECRET=
+
+----------------------------------------------------
+RATE LIMITING
+----------------------------------------------------
+
+RATE_LIMIT_ENABLED=true
+
+RATE_LIMIT_REQUESTS=100
+
+RATE_LIMIT_WINDOW=60
+
+----------------------------------------------------
+QUEUES
+----------------------------------------------------
+
+QUEUE_CONCURRENCY=10
+
+QUEUE_RETRY_COUNT=3
+
+----------------------------------------------------
+FEATURE FLAGS
+----------------------------------------------------
+
+ENABLE_INTERPRETER=true
+
+ENABLE_ORGANIZATIONS=true
+
+ENABLE_OUTCOMES=true
+
+ENABLE_PROVIDER_ROUTING=false
+
+ENABLE_WHATSAPP_AGENT=false
+
+ENABLE_VOICE_AGENT=false
+
+----------------------------------------------------
+INTERNAL
+----------------------------------------------------
+
+CRON_SECRET=
+
+ADMIN_EMAIL=
+
+SUPER_ADMIN_EMAIL=
+
+WORKER ENVIRONMENT VARIABLES
+apps/worker/.env
+
+DATABASE_URL=
+
+REDIS_URL=
+
+AWS_ACCESS_KEY_ID=
+
+AWS_SECRET_ACCESS_KEY=
+
+AWS_BUCKET=
+
+GEMINI_API_KEY=
+
+GROQ_API_KEY=
+
+DEEPGRAM_API_KEY=
+
+SENTRY_DSN=
+
+OCR_QUEUE_NAME=ocr
+
+TRANSLATION_QUEUE_NAME=translation
+
+EXTRACTION_QUEUE_NAME=extraction
+
+OUTCOME_QUEUE_NAME=outcome
+
+PROVIDER_SYNC_QUEUE_NAME=provider_sync
+
+WORKER_CONCURRENCY=20
+
+WORKER_RETRY_COUNT=5
+
+WORKER_TIMEOUT=300
+
+Production Secrets Count
+
+For the architecture you described, production would realistically need:
+
+Auth:                    4
+Database:                2
+Redis:                   4
+AWS/S3:                  5
+AI:                      5
+Voice:                   5
+Maps:                    2
+Analytics:               2
+Monitoring:              2
+Email:                   3
+Twilio/WhatsApp:         4
+Security:                4
+--------------------------------
+Total: ~42–50 variables
+
+That's about what I'd expect from a healthcare-navigation SaaS with AI, document processing, provider discovery, interpreter capabilities, and organization management.  # SWASTHYATRA TECHNOLOGY DECISION RECORD (TDR)
+
+# Why Every Framework Exists
+
+---
+
+# 1. NEXT.JS 16
+
+Category:
+Application Framework
+
+Used For:
+
+* Frontend
+* Backend
+* Server Actions
+* API Routes
+* SSR
+* Authentication
+
+---
+
+Why?
+
+SwasthYatra has:
+
+* Public marketing pages
+* Authenticated dashboard
+* Healthcare data
+* AI workflows
+* SEO requirements
+
+We need:
+
+* React
+* Backend
+* SSR
+* Security
+
+inside one framework.
+
+Next.js gives:
+
+```text
+Frontend
+
++
+
+Backend
+
++
+
+Deployment
+
++
+
+SSR
+
++
+
+Server Actions
+```
+
+without maintaining:
+
+```text
+React
+
++
+
+Express
+
++
+
+Separate API
+```
+
+---
+
+Rejected:
+
+```text
+Vite
+
+Remix
+
+Angular
+
+Vue/Nuxt
+```
+
+Reason:
+
+More moving pieces.
+
+Less ecosystem support.
+
+---
+
+# 2. REACT 19
+
+Category:
+UI Runtime
+
+Used For:
+
+Every user interface.
+
+---
+
+Why?
+
+The platform has:
+
+* Dashboards
+* Maps
+* Tables
+* Agent interfaces
+* Realtime interpreter
+
+React is the ecosystem standard.
+
+---
+
+Used Specifically For:
+
+```text
+Server Components
+
+Suspense
+
+Streaming
+
+Optimistic Updates
+```
+
+---
+
+# 3. TYPESCRIPT
+
+Category:
+Type Safety
+
+---
+
+Why?
+
+Healthcare data is complex.
+
+Examples:
+
+```ts
+TravelHealthSession
+
+HealthPassport
+
+MedicalMemory
+
+MedicationEquivalent
+```
+
+Without types:
+
+```text
+Runtime Errors
+
+Broken Queries
+
+Wrong Data Mapping
+```
+
+---
+
+TypeScript prevents:
+
+```text
+Provider Bugs
+
+Medication Bugs
+
+Agent Bugs
+```
+
+---
+
+# 4. AUTH.JS (NEXTAUTH)
+
+Category:
+Authentication
+
+---
+
+Used For:
+
+```text
+Login
+
+Session Management
+
+Google OAuth
+
+RBAC
+```
+
+---
+
+Why?
+
+Healthcare platforms require:
+
+```text
+Secure Sessions
+
+Role-Based Access
+
+Provider Access
+
+Organization Access
+```
+
+Auth.js is tightly integrated with Next.js.
+
+---
+
+Rejected:
+
+```text
+Clerk
+
+Firebase Auth
+
+Supabase Auth
+```
+
+Reason:
+
+More vendor lock-in.
+
+Less control.
+
+---
+
+# 5. PRISMA
+
+Category:
+ORM
+
+---
+
+Used For:
+
+Every database query.
+
+---
+
+Why?
+
+We have:
+
+50+ models.
+
+Examples:
+
+```text
+Passport
+
+Journey
+
+Memory
+
+Provider
+
+Medication
+
+Outcome
+```
+
+Writing raw SQL becomes painful.
+
+Prisma provides:
+
+```text
+Type Safety
+
+Relations
+
+Migrations
+
+Generated Types
+```
+
+---
+
+Rejected:
+
+```text
+TypeORM
+
+Sequelize
+
+Raw SQL
+```
+
+---
+
+# 6. POSTGRESQL
+
+Category:
+Primary Database
+
+---
+
+Why?
+
+Need:
+
+```text
+Transactions
+
+Relations
+
+Geospatial Queries
+
+Reliability
+```
+
+---
+
+Examples:
+
+```sql
+User
+
+↓
+
+Passport
+
+↓
+
+Journey
+
+↓
+
+Outcome
+```
+
+Complex relationships.
+
+---
+
+Rejected:
+
+```text
+MongoDB
+```
+
+Reason:
+
+Healthcare data is relational.
+
+---
+
+# 7. POSTGIS
+
+Category:
+Geospatial Extension
+
+---
+
+Why?
+
+Core feature:
+
+Provider Discovery.
+
+Need:
+
+```sql
+Find hospitals within 5km
+
+Find pharmacies nearby
+
+Sort by distance
+```
+
+PostGIS solves this natively.
+
+---
+
+# 8. AMAZON S3
+
+Category:
+Object Storage
+
+---
+
+Stores:
+
+```text
+Reports
+
+Prescriptions
+
+Audio
+
+Passport Exports
+```
+
+---
+
+Why?
+
+Documents can become large.
+
+Database storage is expensive.
+
+S3 is:
+
+```text
+Cheap
+
+Scalable
+
+Reliable
+```
+
+---
+
+# 9. REDIS
+
+Category:
+Cache + Queue
+
+---
+
+Used For:
+
+```text
+Caching
+
+Rate Limiting
+
+Job Queues
+
+Session Data
+```
+
+---
+
+Examples:
+
+```text
+OCR Queue
+
+Translation Queue
+
+Extraction Queue
+```
+
+---
+
+Without Redis:
+
+Every request hits database.
+
+---
+
+# 10. BULLMQ
+
+Category:
+Background Jobs
+
+---
+
+Why?
+
+OCR can take:
+
+```text
+10–30 seconds
+```
+
+Cannot block request.
+
+Instead:
+
+```text
+Upload
+
+↓
+
+Queue
+
+↓
+
+Worker
+
+↓
+
+Result
+```
+
+---
+
+# 11. GOOGLE GEMINI
+
+Category:
+Document Intelligence
+
+---
+
+Used For:
+
+```text
+Extraction
+
+Summarization
+
+Translation
+
+Clinical Context
+```
+
+---
+
+Why?
+
+Passport creation depends on:
+
+```text
+Medical Documents
+
+Lab Reports
+
+Prescriptions
+```
+
+Gemini excels at document understanding.
+
+---
+
+# 12. GROQ
+
+Category:
+Agent Reasoning
+
+---
+
+Used For:
+
+```text
+Planning
+
+Reasoning
+
+Reflection
+
+Replanning
+```
+
+---
+
+Why?
+
+Agent workflows need:
+
+```text
+Fast Responses
+
+Low Cost
+
+Tool Usage
+```
+
+Groq provides low latency.
+
+---
+
+# 13. LANGGRAPH
+
+Category:
+Agent Framework
+
+---
+
+Most important AI framework.
+
+---
+
+Why?
+
+Healthcare Navigation is:
+
+NOT
+
+```text
+Prompt
+
+↓
+
+Answer
+```
+
+Instead:
+
+```text
+Goal
+
+↓
+
+Reason
+
+↓
+
+Plan
+
+↓
+
+Execute
+
+↓
+
+Reflect
+```
+
+LangGraph models this naturally.
+
+---
+
+Used For:
+
+```text
+Navigation Agent
+
+Medication Agent
+
+Provider Agent
+
+Outcome Agent
+```
+
+---
+
+Rejected:
+
+```text
+Simple Chatbot Architecture
+```
+
+Reason:
+
+Too limited.
+
+---
+
+# 14. DEEPGRAM
+
+Category:
+Speech-To-Text
+
+---
+
+Used For:
+
+Interpreter.
+
+Flow:
+
+```text
+Patient Audio
+
+↓
+
+Text
+```
+
+---
+
+Why?
+
+Medical conversations require:
+
+```text
+High Accuracy
+
+Realtime Latency
+```
+
+---
+
+# 15. ELEVENLABS
+
+Category:
+Text-To-Speech
+
+---
+
+Used For:
+
+Interpreter Responses.
+
+Flow:
+
+```text
+Translated Text
+
+↓
+
+Natural Voice
+```
+
+---
+
+Why?
+
+Healthcare interactions feel more natural through voice.
+
+---
+
+# 16. LIVEKIT
+
+Category:
+Realtime Communication
+
+---
+
+Used For:
+
+Future:
+
+```text
+Provider Calls
+
+Voice Sessions
+
+Interpreter Calls
+```
+
+---
+
+Why?
+
+Need low-latency audio infrastructure.
+
+---
+
+# 17. GEOAPIFY
+
+Category:
+Location Intelligence
+
+---
+
+Used For:
+
+```text
+Hospital Search
+
+Clinic Search
+
+Pharmacy Search
+```
+
+---
+
+Why?
+
+Core healthcare navigation requirement.
+
+---
+
+# 18. OPENSTREETMAP
+
+Category:
+Provider Dataset
+
+---
+
+Used For:
+
+Bootstrap provider inventory.
+
+---
+
+Why?
+
+Cannot manually collect providers.
+
+Need:
+
+```text
+Global Coverage
+```
+
+---
+
+# 19. MAPLIBRE
+
+Category:
+Maps
+
+---
+
+Used For:
+
+Provider maps.
+
+---
+
+Why?
+
+Open-source.
+
+No Google Maps lock-in.
+
+---
+
+# 20. POSTHOG
+
+Category:
+Product Analytics
+
+---
+
+Tracks:
+
+```text
+Passport Creation
+
+Provider Selection
+
+Journey Completion
+```
+
+---
+
+Why?
+
+Need to know:
+
+```text
+What users do
+
+Where they drop off
+
+What converts
+```
+
+---
+
+# 21. SENTRY
+
+Category:
+Error Monitoring
+
+---
+
+Tracks:
+
+```text
+Frontend Crashes
+
+API Failures
+
+Agent Failures
+```
+
+---
+
+Why?
+
+Healthcare software must be reliable.
+
+---
+
+# 22. PLAYWRIGHT
+
+Category:
+E2E Testing
+
+---
+
+Used For:
+
+```text
+Onboarding
+
+Passport Sharing
+
+Provider Search
+```
+
+---
+
+Why?
+
+Tests actual user behavior.
+
+---
+
+# 23. VITEST
+
+Category:
+Unit Testing
+
+---
+
+Used For:
+
+```text
+Services
+
+Utilities
+
+Agent Logic
+```
+
+---
+
+Why?
+
+Fast TypeScript-native testing.
+
+---
+
+# 24. DOCKER
+
+Category:
+Development Infrastructure
+
+---
+
+Used For:
+
+```text
+Postgres
+
+Redis
+
+MinIO
+```
+
+---
+
+Why?
+
+Every developer gets identical environment.
+
+---
+
+# 25. VERCEL
+
+Category:
+Hosting
+
+---
+
+Used For:
+
+Production deployment.
+
+---
+
+Why?
+
+Best support for:
+
+```text
+Next.js
+
+Server Actions
+
+Edge Functions
+```
+
+---
+
+# 26. AWS
+
+Category:
+Cloud Infrastructure
+
+---
+
+Used For:
+
+```text
+S3
+
+CloudFront
+
+SES
+
+Future ECS
+```
+
+---
+
+Why?
+
+Healthcare-scale infrastructure.
+
+---
+
+# THE MOST IMPORTANT DECISION
+
+The stack was never chosen because the tools were popular.
+
+Every tool exists because it directly supports one of the four core engines:
+
+1. Navigation Engine
+2. Medical Knowledge Engine
+3. Intelligence Engine
+4. Agent Operating System
+
+If a framework does not strengthen one of those engines, it should not exist in the repository.
+# SWASTHYATRA DATABASE ARCHITECTURE
+
+# Philosophy
+
+Most healthcare systems are centered around:
+
+Patient
+
+↓
+
+Appointment
+
+↓
+
+Doctor
+
+↓
+
+Prescription
+
+SwasthYatra is different.
+
+Everything revolves around:
+
+```text
+TravelHealthSession
+```
+
+The database is designed around healthcare journeys.
+
+Not appointments.
+
+Not hospitals.
+
+Not chats.
+
+Journeys.
+
+---
+
+# DATABASE LAYERS
+
+The database consists of 10 major domains.
+
+```text
+Authentication
+
+↓
+
+Identity
+
+↓
+
+Healthcare Knowledge
+
+↓
+
+Healthcare Journey
+
+↓
+
+Provider Network
+
+↓
+
+Medication Intelligence
+
+↓
+
+Interpreter
+
+↓
+
+Outcome Intelligence
+
+↓
+
+Organizations
+
+↓
+
+Audit & Security
+```
+
+---
+
+# LAYER 1
+
+# AUTHENTICATION DOMAIN
+
+Purpose:
+
+Identity.
+
+Tables:
+
+```text
+User
+
+Account
+
+Session
+
+VerificationToken
+```
+
+(Auth.js standard)
+
+---
+
+# User
+
+Represents:
+
+A human.
+
+Could be:
+
+```text
+Traveler
+
+Doctor
+
+Pharmacist
+
+Admin
+```
+
+Key Fields:
+
+```text
+id
+
+email
+
+role
+
+onboardingCompleted
+```
+
+Relationships:
+
+```text
+User
+
+├── Passport
+├── Documents
+├── Memories
+├── Journeys
+├── Organizations
+└── Notifications
+```
+
+---
+
+# LAYER 2
+
+# HEALTH PASSPORT DOMAIN
+
+Purpose:
+
+Portable healthcare identity.
+
+---
+
+Tables:
+
+```text
+HealthPassport
+
+PassportShareLink
+
+PassportAccessLog
+```
+
+---
+
+# HealthPassport
+
+Stores:
+
+```text
+Blood Type
+
+Insurance
+
+Emergency Contacts
+```
+
+Passport does NOT store everything.
+
+Instead:
+
+Passport aggregates:
+
+```text
+Memory
+
+Documents
+
+Journey History
+```
+
+into a shareable profile.
+
+---
+
+# PassportShareLink
+
+Allows:
+
+```text
+Traveler
+
+↓
+
+Doctor
+```
+
+secure access.
+
+---
+
+# PassportAccessLog
+
+Tracks:
+
+```text
+Who viewed?
+
+When?
+
+From where?
+```
+
+Compliance requirement.
+
+---
+
+# LAYER 3
+
+# HEALTH VAULT DOMAIN
+
+Purpose:
+
+Document storage.
+
+---
+
+Tables:
+
+```text
+VaultDocument
+
+VaultAuditLog
+```
+
+---
+
+# VaultDocument
+
+Source of truth.
+
+Stores:
+
+```text
+Reports
+
+Prescriptions
+
+Vaccinations
+
+Insurance Docs
+```
+
+Important:
+
+Documents are immutable.
+
+The original document never changes.
+
+---
+
+Processing State:
+
+```text
+UPLOADED
+
+↓
+
+OCR_COMPLETE
+
+↓
+
+TRANSLATED
+
+↓
+
+EXTRACTED
+```
+
+---
+
+# LAYER 4
+
+# MEDICAL MEMORY DOMAIN
+
+Purpose:
+
+Persistent health knowledge.
+
+---
+
+Tables:
+
+```text
+MedicalMemory
+
+MedicalMemoryCandidate
+```
+
+---
+
+# MedicalMemory
+
+Stores:
+
+Verified facts.
+
+Examples:
+
+```text
+Penicillin Allergy
+
+Type 2 Diabetes
+
+Metformin Usage
+```
+
+---
+
+# MedicalMemoryCandidate
+
+Stores:
+
+AI suggestions.
+
+Example:
+
+```text
+Gemini extracted:
+
+"Patient has Diabetes"
+
+Confidence:
+91%
+```
+
+NOT trusted yet.
+
+Requires approval.
+
+---
+
+Workflow:
+
+```text
+Document
+
+↓
+
+Candidate
+
+↓
+
+Review
+
+↓
+
+Memory
+```
+
+This is a major safety boundary.
+
+---
+
+# LAYER 5
+
+# JOURNEY DOMAIN
+
+Most important domain.
+
+---
+
+Tables:
+
+```text
+TravelHealthSession
+
+JourneyTimelineEvent
+```
+
+---
+
+# TravelHealthSession
+
+Core entity.
+
+Contains:
+
+```text
+Country
+
+City
+
+Symptoms
+
+Severity
+
+Provider Context
+
+Outcome Context
+```
+
+Every subsystem references this.
+
+---
+
+Examples:
+
+```text
+Traveler
+
+Japan
+
+Food Poisoning
+
+Severity:
+Medium
+
+Status:
+Active
+```
+
+---
+
+# JourneyTimelineEvent
+
+Stores:
+
+Everything that happened.
+
+Examples:
+
+```text
+Journey Created
+
+Medication Suggested
+
+Provider Viewed
+
+Interpreter Started
+
+Outcome Recorded
+```
+
+This creates replayability.
+
+---
+
+# LAYER 6
+
+# MEDICATION INTELLIGENCE DOMAIN
+
+One of the moats.
+
+---
+
+Tables:
+
+```text
+Medication
+
+ActiveIngredient
+
+CountryMedication
+
+MedicationEquivalent
+
+DrugInteraction
+```
+
+---
+
+# Medication
+
+Brand.
+
+Example:
+
+```text
+Crocin
+```
+
+---
+
+# ActiveIngredient
+
+Actual medicine.
+
+Example:
+
+```text
+Paracetamol
+```
+
+---
+
+Relationship:
+
+```text
+Crocin
+
+↓
+
+Paracetamol
+
+↓
+
+Tylenol
+```
+
+---
+
+# CountryMedication
+
+Stores:
+
+Country-specific availability.
+
+Example:
+
+```text
+India
+
+Crocin
+
+OTC
+```
+
+---
+
+# MedicationEquivalent
+
+Cross-country mapping.
+
+Core traveler problem.
+
+---
+
+# DrugInteraction
+
+Future safety system.
+
+Detects:
+
+```text
+Drug A
+
++
+
+Drug B
+
+↓
+
+Risk
+```
+
+---
+
+# LAYER 7
+
+# PROVIDER NETWORK DOMAIN
+
+Future moat.
+
+---
+
+Tables:
+
+```text
+Provider
+
+ProviderReview
+
+ProviderAvailability
+
+ProviderContactChannel
+
+ProviderRouting
+
+ProviderDispatcher
+
+ProviderInbox
+```
+
+---
+
+# Provider
+
+Represents:
+
+```text
+Hospital
+
+Clinic
+
+Pharmacy
+
+Telemedicine
+```
+
+---
+
+Fields:
+
+```text
+Location
+
+Languages
+
+Insurance
+
+Specialties
+```
+
+---
+
+# ProviderAvailability
+
+Stores:
+
+```text
+Monday
+
+9AM-5PM
+```
+
+---
+
+# ProviderRouting
+
+Future.
+
+Used for:
+
+```text
+Matching travelers
+
+to
+
+providers
+```
+
+---
+
+# ProviderDispatcher
+
+Future.
+
+Assigns requests.
+
+---
+
+# LAYER 8
+
+# INTERPRETER DOMAIN
+
+Language barrier moat.
+
+---
+
+Tables:
+
+```text
+InterpreterSession
+
+ConversationMessage
+
+InterpreterContext
+```
+
+---
+
+# InterpreterSession
+
+Stores:
+
+```text
+Language Pair
+
+Status
+
+Duration
+```
+
+---
+
+# ConversationMessage
+
+Stores:
+
+```text
+Speaker
+
+Transcript
+
+Translation
+
+Timestamp
+```
+
+---
+
+# InterpreterContext
+
+Injects:
+
+```text
+Allergies
+
+Conditions
+
+Medications
+```
+
+into translations.
+
+This is what makes the interpreter healthcare-aware.
+
+---
+
+# LAYER 9
+
+# OUTCOME DOMAIN
+
+Most valuable long-term asset.
+
+---
+
+Tables:
+
+```text
+OutcomeInsight
+
+MedicationOutcome
+
+ProviderOutcome
+
+OutcomeAggregation
+```
+
+---
+
+Example:
+
+```text
+Traveler
+
+Bangkok
+
+Food Poisoning
+
+Medication:
+X
+
+Recovered:
+24 Hours
+```
+
+---
+
+Over time:
+
+Millions of journeys
+
+↓
+
+Outcome Graph
+
+↓
+
+Better recommendations
+
+---
+
+This becomes proprietary data.
+
+---
+
+# LAYER 10
+
+# ORGANIZATION DOMAIN
+
+B2B layer.
+
+---
+
+Tables:
+
+```text
+Organization
+
+OrganizationMember
+
+OrganizationInvitation
+```
+
+---
+
+Used For:
+
+```text
+Hospitals
+
+Clinics
+
+Pharmacy Chains
+```
+
+---
+
+Roles:
+
+```text
+Admin
+
+Operator
+
+Doctor
+
+Assistant
+```
+
+---
+
+# AGENT DOMAIN
+
+The AI operating system.
+
+---
+
+Tables:
+
+```text
+AgentTask
+
+AgentNodeExecution
+
+AgentToolCall
+
+AgentApproval
+```
+
+---
+
+# AgentTask
+
+Goal.
+
+Example:
+
+```text
+Find medication equivalent.
+```
+
+---
+
+# AgentNodeExecution
+
+Records:
+
+```text
+Reason
+
+Plan
+
+Execute
+
+Reflect
+```
+
+for observability.
+
+---
+
+# AgentToolCall
+
+Records:
+
+```text
+Provider Search
+
+Medication Search
+
+Passport Query
+```
+
+---
+
+# AgentApproval
+
+Human approval gate.
+
+Required for:
+
+```text
+Sharing
+
+Notifications
+
+Sensitive Actions
+```
+
+---
+
+# AUDIT DOMAIN
+
+Most important security layer.
+
+---
+
+Table:
+
+```text
+AuditLog
+```
+
+Stores:
+
+```text
+Who
+
+Did What
+
+To Which Resource
+
+When
+```
+
+Examples:
+
+```text
+PASSPORT_SHARED
+
+MEMORY_APPROVED
+
+DOCUMENT_DELETED
+
+ROLE_CHANGED
+```
+
+Nothing bypasses audit logging.
+
+---
+
+# NOTIFICATION DOMAIN
+
+Tables:
+
+```text
+Notification
+
+NotificationPreference
+
+NotificationTemplate
+```
+
+---
+
+Supports:
+
+```text
+Email
+
+In-App
+
+SMS
+
+WhatsApp
+```
+
+---
+
+# DATABASE DESIGN PRINCIPLES
+
+Principle 1
+
+Every record has ownership.
+
+```text
+userId
+```
+
+---
+
+Principle 2
+
+Every critical action is auditable.
+
+---
+
+Principle 3
+
+AI never writes directly to verified memory.
+
+---
+
+Principle 4
+
+Documents are immutable.
+
+---
+
+Principle 5
+
+Everything links back to:
+
+```text
+TravelHealthSession
+```
+
+---
+
+# THE REAL DATABASE MODEL
+
+Most startups have:
+
+```text
+User
+
+↓
+
+Feature
+```
+
+SwasthYatra has:
+
+```text
+Traveler
+
+↓
+
+TravelHealthSession
+
+↓
+
+Passport
+
+↓
+
+Memory
+
+↓
+
+Medication
+
+↓
+
+Provider
+
+↓
+
+Interpreter
+
+↓
+
+Outcome
+
+↓
+
+Healthcare Graph
+```
+
+That graph is the real product.
+
+The dashboard, AI, maps, and providers are simply interfaces into that graph.
+# SWASTHYATRA TECHNOLOGY DECISION RECORD (TDR)
+
+# Why Every Framework Exists
+
+---
+
+# 1. NEXT.JS 16
+
+Category:
+Application Framework
+
+Used For:
+
+* Frontend
+* Backend
+* Server Actions
+* API Routes
+* SSR
+* Authentication
+
+---
+
+Why?
+
+SwasthYatra has:
+
+* Public marketing pages
+* Authenticated dashboard
+* Healthcare data
+* AI workflows
+* SEO requirements
+
+We need:
+
+* React
+* Backend
+* SSR
+* Security
+
+inside one framework.
+
+Next.js gives:
+
+```text
+Frontend
+
++
+
+Backend
+
++
+
+Deployment
+
++
+
+SSR
+
++
+
+Server Actions
+```
+
+without maintaining:
+
+```text
+React
+
++
+
+Express
+
++
+
+Separate API
+```
+
+---
+
+Rejected:
+
+```text
+Vite
+
+Remix
+
+Angular
+
+Vue/Nuxt
+```
+
+Reason:
+
+More moving pieces.
+
+Less ecosystem support.
+
+---
+
+# 2. REACT 19
+
+Category:
+UI Runtime
+
+Used For:
+
+Every user interface.
+
+---
+
+Why?
+
+The platform has:
+
+* Dashboards
+* Maps
+* Tables
+* Agent interfaces
+* Realtime interpreter
+
+React is the ecosystem standard.
+
+---
+
+Used Specifically For:
+
+```text
+Server Components
+
+Suspense
+
+Streaming
+
+Optimistic Updates
+```
+
+---
+
+# 3. TYPESCRIPT
+
+Category:
+Type Safety
+
+---
+
+Why?
+
+Healthcare data is complex.
+
+Examples:
+
+```ts
+TravelHealthSession
+
+HealthPassport
+
+MedicalMemory
+
+MedicationEquivalent
+```
+
+Without types:
+
+```text
+Runtime Errors
+
+Broken Queries
+
+Wrong Data Mapping
+```
+
+---
+
+TypeScript prevents:
+
+```text
+Provider Bugs
+
+Medication Bugs
+
+Agent Bugs
+```
+
+---
+
+# 4. AUTH.JS (NEXTAUTH)
+
+Category:
+Authentication
+
+---
+
+Used For:
+
+```text
+Login
+
+Session Management
+
+Google OAuth
+
+RBAC
+```
+
+---
+
+Why?
+
+Healthcare platforms require:
+
+```text
+Secure Sessions
+
+Role-Based Access
+
+Provider Access
+
+Organization Access
+```
+
+Auth.js is tightly integrated with Next.js.
+
+---
+
+Rejected:
+
+```text
+Clerk
+
+Firebase Auth
+
+Supabase Auth
+```
+
+Reason:
+
+More vendor lock-in.
+
+Less control.
+
+---
+
+# 5. PRISMA
+
+Category:
+ORM
+
+---
+
+Used For:
+
+Every database query.
+
+---
+
+Why?
+
+We have:
+
+50+ models.
+
+Examples:
+
+```text
+Passport
+
+Journey
+
+Memory
+
+Provider
+
+Medication
+
+Outcome
+```
+
+Writing raw SQL becomes painful.
+
+Prisma provides:
+
+```text
+Type Safety
+
+Relations
+
+Migrations
+
+Generated Types
+```
+
+---
+
+Rejected:
+
+```text
+TypeORM
+
+Sequelize
+
+Raw SQL
+```
+
+---
+
+# 6. POSTGRESQL
+
+Category:
+Primary Database
+
+---
+
+Why?
+
+Need:
+
+```text
+Transactions
+
+Relations
+
+Geospatial Queries
+
+Reliability
+```
+
+---
+
+Examples:
+
+```sql
+User
+
+↓
+
+Passport
+
+↓
+
+Journey
+
+↓
+
+Outcome
+```
+
+Complex relationships.
+
+---
+
+Rejected:
+
+```text
+MongoDB
+```
+
+Reason:
+
+Healthcare data is relational.
+
+---
+
+# 7. POSTGIS
+
+Category:
+Geospatial Extension
+
+---
+
+Why?
+
+Core feature:
+
+Provider Discovery.
+
+Need:
+
+```sql
+Find hospitals within 5km
+
+Find pharmacies nearby
+
+Sort by distance
+```
+
+PostGIS solves this natively.
+
+---
+
+# 8. AMAZON S3
+
+Category:
+Object Storage
+
+---
+
+Stores:
+
+```text
+Reports
+
+Prescriptions
+
+Audio
+
+Passport Exports
+```
+
+---
+
+Why?
+
+Documents can become large.
+
+Database storage is expensive.
+
+S3 is:
+
+```text
+Cheap
+
+Scalable
+
+Reliable
+```
+
+---
+
+# 9. REDIS
+
+Category:
+Cache + Queue
+
+---
+
+Used For:
+
+```text
+Caching
+
+Rate Limiting
+
+Job Queues
+
+Session Data
+```
+
+---
+
+Examples:
+
+```text
+OCR Queue
+
+Translation Queue
+
+Extraction Queue
+```
+
+---
+
+Without Redis:
+
+Every request hits database.
+
+---
+
+# 10. BULLMQ
+
+Category:
+Background Jobs
+
+---
+
+Why?
+
+OCR can take:
+
+```text
+10–30 seconds
+```
+
+Cannot block request.
+
+Instead:
+
+```text
+Upload
+
+↓
+
+Queue
+
+↓
+
+Worker
+
+↓
+
+Result
+```
+
+---
+
+# 11. GOOGLE GEMINI
+
+Category:
+Document Intelligence
+
+---
+
+Used For:
+
+```text
+Extraction
+
+Summarization
+
+Translation
+
+Clinical Context
+```
+
+---
+
+Why?
+
+Passport creation depends on:
+
+```text
+Medical Documents
+
+Lab Reports
+
+Prescriptions
+```
+
+Gemini excels at document understanding.
+
+---
+
+# 12. GROQ
+
+Category:
+Agent Reasoning
+
+---
+
+Used For:
+
+```text
+Planning
+
+Reasoning
+
+Reflection
+
+Replanning
+```
+
+---
+
+Why?
+
+Agent workflows need:
+
+```text
+Fast Responses
+
+Low Cost
+
+Tool Usage
+```
+
+Groq provides low latency.
+
+---
+
+# 13. LANGGRAPH
+
+Category:
+Agent Framework
+
+---
+
+Most important AI framework.
+
+---
+
+Why?
+
+Healthcare Navigation is:
+
+NOT
+
+```text
+Prompt
+
+↓
+
+Answer
+```
+
+Instead:
+
+```text
+Goal
+
+↓
+
+Reason
+
+↓
+
+Plan
+
+↓
+
+Execute
+
+↓
+
+Reflect
+```
+
+LangGraph models this naturally.
+
+---
+
+Used For:
+
+```text
+Navigation Agent
+
+Medication Agent
+
+Provider Agent
+
+Outcome Agent
+```
+
+---
+
+Rejected:
+
+```text
+Simple Chatbot Architecture
+```
+
+Reason:
+
+Too limited.
+
+---
+
+# 14. DEEPGRAM
+
+Category:
+Speech-To-Text
+
+---
+
+Used For:
+
+Interpreter.
+
+Flow:
+
+```text
+Patient Audio
+
+↓
+
+Text
+```
+
+---
+
+Why?
+
+Medical conversations require:
+
+```text
+High Accuracy
+
+Realtime Latency
+```
+
+---
+
+# 15. ELEVENLABS
+
+Category:
+Text-To-Speech
+
+---
+
+Used For:
+
+Interpreter Responses.
+
+Flow:
+
+```text
+Translated Text
+
+↓
+
+Natural Voice
+```
+
+---
+
+Why?
+
+Healthcare interactions feel more natural through voice.
+
+---
+
+# 16. LIVEKIT
+
+Category:
+Realtime Communication
+
+---
+
+Used For:
+
+Future:
+
+```text
+Provider Calls
+
+Voice Sessions
+
+Interpreter Calls
+```
+
+---
+
+Why?
+
+Need low-latency audio infrastructure.
+
+---
+
+# 17. GEOAPIFY
+
+Category:
+Location Intelligence
+
+---
+
+Used For:
+
+```text
+Hospital Search
+
+Clinic Search
+
+Pharmacy Search
+```
+
+---
+
+Why?
+
+Core healthcare navigation requirement.
+
+---
+
+# 18. OPENSTREETMAP
+
+Category:
+Provider Dataset
+
+---
+
+Used For:
+
+Bootstrap provider inventory.
+
+---
+
+Why?
+
+Cannot manually collect providers.
+
+Need:
+
+```text
+Global Coverage
+```
+
+---
+
+# 19. MAPLIBRE
+
+Category:
+Maps
+
+---
+
+Used For:
+
+Provider maps.
+
+---
+
+Why?
+
+Open-source.
+
+No Google Maps lock-in.
+
+---
+
+# 20. POSTHOG
+
+Category:
+Product Analytics
+
+---
+
+Tracks:
+
+```text
+Passport Creation
+
+Provider Selection
+
+Journey Completion
+```
+
+---
+
+Why?
+
+Need to know:
+
+```text
+What users do
+
+Where they drop off
+
+What converts
+```
+
+---
+
+# 21. SENTRY
+
+Category:
+Error Monitoring
+
+---
+
+Tracks:
+
+```text
+Frontend Crashes
+
+API Failures
+
+Agent Failures
+```
+
+---
+
+Why?
+
+Healthcare software must be reliable.
+
+---
+
+# 22. PLAYWRIGHT
+
+Category:
+E2E Testing
+
+---
+
+Used For:
+
+```text
+Onboarding
+
+Passport Sharing
+
+Provider Search
+```
+
+---
+
+Why?
+
+Tests actual user behavior.
+
+---
+
+# 23. VITEST
+
+Category:
+Unit Testing
+
+---
+
+Used For:
+
+```text
+Services
+
+Utilities
+
+Agent Logic
+```
+
+---
+
+Why?
+
+Fast TypeScript-native testing.
+
+---
+
+# 24. DOCKER
+
+Category:
+Development Infrastructure
+
+---
+
+Used For:
+
+```text
+Postgres
+
+Redis
+
+MinIO
+```
+
+---
+
+Why?
+
+Every developer gets identical environment.
+
+---
+
+# 25. VERCEL
+
+Category:
+Hosting
+
+---
+
+Used For:
+
+Production deployment.
+
+---
+
+Why?
+
+Best support for:
+
+```text
+Next.js
+
+Server Actions
+
+Edge Functions
+```
+
+---
+
+# 26. AWS
+
+Category:
+Cloud Infrastructure
+
+---
+
+Used For:
+
+```text
+S3
+
+CloudFront
+
+SES
+
+Future ECS
+```
+
+---
+
+Why?
+
+Healthcare-scale infrastructure.
+
+---
+
+# THE MOST IMPORTANT DECISION
+
+The stack was never chosen because the tools were popular.
+
+Every tool exists because it directly supports one of the four core engines:
+
+1. Navigation Engine
+2. Medical Knowledge Engine
+3. Intelligence Engine
+4. Agent Operating System
+
+If a framework does not strengthen one of those engines, it should not exist in the repository.
+# SWASTHYATRA
+
+# MOST IMPORTANT CODE FILES
+
+---
+
+# TIER 0
+
+# COMPANY DEFINING FILES
+
+These files define the entire product.
+
+Without them the platform does not exist.
+
+---
+
+packages/database/prisma/schema.prisma
+
+Purpose:
+
+Entire platform schema.
+
+Contains:
+
+* 50+ models
+* enums
+* relations
+* indexes
+
+Defines:
+
+```text
+Passport
+
+Memory
+
+Journey
+
+Provider
+
+Medication
+
+Outcome
+
+Organizations
+```
+
+Most important file in repository.
+
+---
+
+packages/agent-core/workflows/travel-navigation.workflow.ts
+
+Purpose:
+
+Main healthcare navigation agent.
+
+Flow:
+
+```text
+START
+
+↓
+
+INTAKE
+
+↓
+
+SEVERITY
+
+↓
+
+ROUTER
+
+↓
+
+PHARMACY
+
+CLINIC
+
+HOSPITAL
+
+EMERGENCY
+```
+
+This is the product.
+
+---
+
+packages/agent-core/reasoning.ts
+
+Purpose:
+
+Agent thinking.
+
+Inputs:
+
+```ts
+TravelHealthSession
+
+Passport
+
+Memory
+
+Provider Context
+```
+
+Outputs:
+
+```ts
+Situation Analysis
+```
+
+---
+
+packages/healthcare-graph/medication/equivalent.ts
+
+Purpose:
+
+Medication equivalency.
+
+Example:
+
+```text
+Crocin
+
+↓
+
+Paracetamol
+
+↓
+
+Tylenol
+```
+
+One of the strongest moats.
+
+---
+
+# TIER 1
+
+# SECURITY FILES
+
+Most important production files.
+
+---
+
+src/server/security/ownership.ts
+
+Purpose:
+
+Prevent IDOR.
+
+Contains:
+
+```ts
+assertPassportOwnership()
+
+assertJourneyOwnership()
+
+assertMemoryOwnership()
+
+assertOrganizationMembership()
+```
+
+Every query passes through here.
+
+---
+
+src/server/security/permissions.ts
+
+Purpose:
+
+RBAC.
+
+Contains:
+
+```ts
+canViewPassport()
+
+canApproveMemory()
+
+canManageMembers()
+
+canViewOrganization()
+```
+
+---
+
+src/server/audit/audit.service.ts
+
+Purpose:
+
+Compliance.
+
+Logs:
+
+```text
+PASSPORT_SHARED
+
+DOCUMENT_UPLOADED
+
+MEMORY_APPROVED
+
+ROLE_CHANGED
+```
+
+Nothing bypasses this.
+
+---
+
+# TIER 2
+
+# AUTH FILES
+
+---
+
+src/auth/auth.ts
+
+Purpose:
+
+Auth.js setup.
+
+Creates:
+
+```ts
+Google Provider
+
+Session Strategy
+
+JWT
+```
+
+---
+
+src/auth/auth.callbacks.ts
+
+Purpose:
+
+Inject roles.
+
+Adds:
+
+```ts
+role
+
+permissions
+
+organization access
+```
+
+into session.
+
+---
+
+src/auth/auth.roles.ts
+
+Purpose:
+
+Role definitions.
+
+```ts
+PATIENT
+
+DOCTOR
+
+PHARMACIST
+
+ORG_ADMIN
+
+SUPER_ADMIN
+```
+
+---
+
+# TIER 3
+
+# JOURNEY ENGINE
+
+Core business logic.
+
+---
+
+src/modules/session/actions/create-journey.ts
+
+Purpose:
+
+Start healthcare journey.
+
+Creates:
+
+```ts
+TravelHealthSession
+```
+
+First action of platform.
+
+---
+
+src/modules/session/actions/update-severity.ts
+
+Purpose:
+
+Updates severity.
+
+May trigger:
+
+```text
+Emergency Flow
+
+Provider Search
+
+Medication Search
+```
+
+---
+
+src/modules/navigation/navigation-orchestrator.ts
+
+Purpose:
+
+Routes users.
+
+```text
+LOW
+
+↓
+
+Self Care
+
+MEDIUM
+
+↓
+
+Pharmacy
+
+HIGH
+
+↓
+
+Clinic
+
+CRITICAL
+
+↓
+
+Emergency
+```
+
+Core platform behavior.
+
+---
+
+# TIER 4
+
+# PASSPORT FILES
+
+---
+
+src/modules/passport/actions/generate-passport.ts
+
+Purpose:
+
+Build portable healthcare profile.
+
+Aggregates:
+
+```text
+Memory
+
+Conditions
+
+Allergies
+
+Insurance
+```
+
+---
+
+src/modules/passport/actions/share-passport.ts
+
+Purpose:
+
+Generates secure share link.
+
+Creates:
+
+```ts
+PassportShareLink
+```
+
+---
+
+src/modules/passport/actions/revoke-passport.ts
+
+Purpose:
+
+Immediately disables access.
+
+---
+
+# TIER 5
+
+# MEDICAL MEMORY FILES
+
+---
+
+src/modules/memory/actions/approve-candidate.ts
+
+Purpose:
+
+Moves:
+
+```text
+Candidate
+
+↓
+
+Memory
+```
+
+Critical trust boundary.
+
+---
+
+src/modules/memory/actions/reject-candidate.ts
+
+Purpose:
+
+Rejects AI hallucinations.
+
+---
+
+src/modules/memory/memory.service.ts
+
+Purpose:
+
+Memory engine.
+
+Handles:
+
+```text
+Storage
+
+Retrieval
+
+Merging
+
+Confidence
+```
+
+---
+
+# TIER 6
+
+# VAULT FILES
+
+---
+
+src/modules/vault/actions/upload-document.ts
+
+Purpose:
+
+Document ingestion.
+
+Creates:
+
+```ts
+VaultDocument
+```
+
+---
+
+src/modules/vault/pipeline/extract.ts
+
+Purpose:
+
+Gemini extraction.
+
+Produces:
+
+```text
+MedicalMemoryCandidate
+```
+
+---
+
+src/modules/vault/pipeline/ocr.ts
+
+Purpose:
+
+OCR pipeline.
+
+---
+
+src/modules/vault/pipeline/translate.ts
+
+Purpose:
+
+Document translation.
+
+---
+
+# TIER 7
+
+# PROVIDER FILES
+
+---
+
+src/modules/provider/provider.service.ts
+
+Purpose:
+
+Provider intelligence.
+
+Functions:
+
+```ts
+searchNearby()
+
+findOpenNow()
+
+findByLanguage()
+
+findBySpeciality()
+```
+
+---
+
+src/modules/provider/actions/search-provider.ts
+
+Purpose:
+
+Provider discovery.
+
+Uses:
+
+```text
+Geoapify
+
+OSM
+
+Provider DB
+```
+
+---
+
+src/modules/provider/actions/review-provider.ts
+
+Purpose:
+
+Outcome feedback.
+
+---
+
+# TIER 8
+
+# MEDICATION FILES
+
+---
+
+src/modules/medication/actions/search-equivalent.ts
+
+Purpose:
+
+Country-specific medication lookup.
+
+---
+
+packages/healthcare-graph/medication/interactions.ts
+
+Purpose:
+
+Drug interaction checking.
+
+Future safety system.
+
+---
+
+packages/healthcare-graph/medication/ingredient.ts
+
+Purpose:
+
+Maps:
+
+```text
+Brand
+
+↓
+
+Ingredient
+```
+
+---
+
+# TIER 9
+
+# INTERPRETER FILES
+
+---
+
+src/modules/interpreter/actions/start-session.ts
+
+Purpose:
+
+Creates:
+
+```ts
+InterpreterSession
+```
+
+---
+
+src/modules/interpreter/deepgram.service.ts
+
+Purpose:
+
+Speech → Text
+
+---
+
+src/modules/interpreter/translation.service.ts
+
+Purpose:
+
+Language translation.
+
+---
+
+src/modules/interpreter/context-builder.ts
+
+Purpose:
+
+Injects:
+
+```text
+Allergies
+
+Conditions
+
+Medications
+```
+
+into translation.
+
+Huge moat.
+
+---
+
+# TIER 10
+
+# OUTCOME FILES
+
+---
+
+src/modules/outcome/actions/record-outcome.ts
+
+Purpose:
+
+Records healthcare result.
+
+---
+
+src/modules/outcome/generate-insights.ts
+
+Purpose:
+
+Creates:
+
+```text
+OutcomeInsight
+```
+
+---
+
+src/modules/outcome/aggregation.service.ts
+
+Purpose:
+
+Builds:
+
+```text
+Outcome Graph
+```
+
+---
+
+# TIER 11
+
+# ORGANIZATION FILES
+
+---
+
+src/modules/organization/actions/create-org.ts
+
+Purpose:
+
+Hospital creation.
+
+---
+
+src/modules/organization/actions/invite-member.ts
+
+Purpose:
+
+Team management.
+
+---
+
+src/modules/organization/permissions.ts
+
+Purpose:
+
+Org-level RBAC.
+
+---
+
+# TIER 12
+
+# AGENT FILES
+
+---
+
+packages/agent-core/planner.ts
+
+Purpose:
+
+Build action plan.
+
+---
+
+packages/agent-core/executor.ts
+
+Purpose:
+
+Run tools.
+
+---
+
+packages/agent-core/reflection.ts
+
+Purpose:
+
+Evaluate results.
+
+---
+
+packages/agent-core/confidence.ts
+
+Purpose:
+
+Risk scoring.
+
+---
+
+packages/agent-core/tools/provider.tool.ts
+
+Purpose:
+
+Provider lookup.
+
+---
+
+packages/agent-core/tools/passport.tool.ts
+
+Purpose:
+
+Passport retrieval.
+
+---
+
+packages/agent-core/tools/memory.tool.ts
+
+Purpose:
+
+Medical memory access.
+
+---
+
+# TIER 13
+
+# INFRASTRUCTURE FILES
+
+---
+
+docker-compose.yml
+
+Purpose:
+
+Local platform stack.
+
+Starts:
+
+```text
+Postgres
+
+Redis
+
+MinIO
+```
+
+---
+
+prisma/seed.ts
+
+Purpose:
+
+Creates:
+
+```text
+Maria Rodriguez
+
+Dr Sarah Chen
+
+Hiro Tanaka
+```
+
+Demo environment.
+
+---
+
+.env.example
+
+Purpose:
+
+All infrastructure configuration.
+
+---
+
+# IF I COULD ONLY SAVE 10 FILES
+
+They would be:
+
+1. schema.prisma
+2. travel-navigation.workflow.ts
+3. reasoning.ts
+4. ownership.ts
+5. permissions.ts
+6. audit.service.ts
+7. navigation-orchestrator.ts
+8. provider.service.ts
+9. medication/equivalent.ts
+10. generate-passport.ts
+
+Those 10 files contain the majority of the platform's unique intellectual property and business logic.
+That's far too much to fit in a single response.
+You're essentially asking for:
+A. Full schema.prismaB. Full ownership.tsC. Full LangGraph workflowD. Full navigation orchestratorE. Full provider serviceF. Complete repository skeleton
+That's realistically 15,000–30,000+ lines of code.
+The correct reconstruction order is:
+Phase 1 (Database)
+schema.prisma
+~2,000–3,000 lines
+Contains:
+
+
+all enums
+
+
+all models
+
+
+all relations
+
+
+indexes
+
+
+constraints
+
+
+
+Phase 2 (Security)
+ownership.tspermissions.tsaudit.service.ts
+~800–1,500 lines
+Contains:
+
+
+IDOR protection
+
+
+RBAC
+
+
+audit logging
+
+
+
+Phase 3 (Navigation Engine)
+navigation-orchestrator.tstravel-navigation.workflow.ts
+~1,000–2,000 lines
+Contains:
+
+
+severity routing
+
+
+LangGraph state
+
+
+tool execution
+
+
+reflection
+
+
+
+Phase 4 (Provider Intelligence)
+provider.service.ts
+~500–1,000 lines
+Contains:
+
+
+search
+
+
+filtering
+
+
+ranking
+
+
+language matching
+
+
+insurance matching
+
+
+
+Phase 5 (Repository Skeleton)
+Entire folder structure with:
+apps/packages/modules/actions/components/
+
+My recommendation:
+Start with A — schema.prisma.
+Everything else depends on it.
+Once the schema is finalized, I can generate:
+ownership.tspermissions.tsrepositories/services/actions/workflows/
+directly from the schema.
+Trying to generate B–F before A is finished will lead to inconsistencies.
+So the next response should be the complete production-grade schema.prisma (Part 1) containing:
+
+
+Auth models
+
+
+User models
+
+
+Passport models
+
+
+Vault models
+
+
+Memory models
+
+
+Journey models
+
+
+and then continue with Parts 2–4 for the remaining models.  schema.prisma Part 1 — Foundation Layer
+This is the portion I would actually implement first because every other domain depends on it.
+generator client {  provider = "prisma-client-js"}datasource db {  provider = "postgresql"  url      = env("DATABASE_URL")  directUrl = env("DIRECT_URL")}//// ENUMS//enum Role {  PATIENT  DOCTOR  PHARMACIST  MEDICAL_ASSISTANT  ORG_OPERATOR  ORG_ADMIN  SUPER_ADMIN}enum ReviewStatus {  PENDING  APPROVED  REJECTED}enum VaultStatus {  UPLOADED  OCR_PROCESSING  OCR_COMPLETE  TRANSLATING  TRANSLATED  EXTRACTING  EXTRACTED  FAILED}enum MemoryType {  CONDITION  ALLERGY  MEDICATION  VACCINATION  INSURANCE  EMERGENCY_CONTACT  PROVIDER_NOTE}//// AUTH.JS MODELS//model User {  id                    String   @id @default(cuid())  name                  String?  email                 String   @unique  emailVerified         DateTime?  image                 String?  role                  Role     @default(PATIENT)  onboardingCompleted   Boolean  @default(false)  accounts              Account[]  sessions              Session[]  passport              HealthPassport?  memories              MedicalMemory[]  documents             VaultDocument[]  auditLogs             AuditLog[]  notifications         Notification[]  createdAt             DateTime @default(now())  updatedAt             DateTime @updatedAt  @@index([email])  @@index([role])}model Account {  id                 String @id @default(cuid())  userId             String  type               String  provider           String  providerAccountId  String  refresh_token      String? @db.Text  access_token       String? @db.Text  expires_at         Int?  token_type         String?  scope              String?  id_token           String? @db.Text  session_state      String?  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  @@unique([provider, providerAccountId])}model Session {  id           String   @id @default(cuid())  sessionToken String   @unique  userId       String  expires      DateTime  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )}model VerificationToken {  identifier String  token      String @unique  expires    DateTime  @@unique([identifier, token])}//// HEALTH PASSPORT//model HealthPassport {  id                    String @id @default(cuid())  userId                String @unique  bloodType             String?  insuranceProvider     String?  insuranceNumber       String?  emergencyContactName  String?  emergencyContactPhone String?  passportVersion       Int @default(1)  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  shareLinks PassportShareLink[]  createdAt DateTime @default(now())  updatedAt DateTime @updatedAt}model PassportShareLink {  id                String @id @default(cuid())  passportId        String  token             String @unique  expiresAt         DateTime  revoked           Boolean @default(false)  passport HealthPassport @relation(    fields: [passportId],    references: [id],    onDelete: Cascade  )  accessLogs PassportAccessLog[]  createdAt DateTime @default(now())  @@index([token])}model PassportAccessLog {  id            String @id @default(cuid())  shareLinkId   String  ipAddress     String?  userAgent     String?  country       String?  viewedAt      DateTime @default(now())  shareLink PassportShareLink @relation(    fields: [shareLinkId],    references: [id],    onDelete: Cascade  )  @@index([viewedAt])}//// HEALTH VAULT//model VaultDocument {  id                    String @id @default(cuid())  userId                String  title                 String  fileName              String  mimeType              String  fileSize              Int  storageKey            String  sha256Hash            String?  status                VaultStatus  originalLanguage      String?  translatedLanguage    String?  ocrCompleted          Boolean @default(false)  translationCompleted  Boolean @default(false)  extractionCompleted   Boolean @default(false)  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  candidates MedicalMemoryCandidate[]  auditLogs VaultAuditLog[]  createdAt DateTime @default(now())  updatedAt DateTime @updatedAt  @@index([userId])  @@index([status])}model VaultAuditLog {  id             String @id @default(cuid())  documentId     String  eventType      String  metadata       Json?  document VaultDocument @relation(    fields: [documentId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([eventType])}//// MEDICAL MEMORY//model MedicalMemory {  id                    String @id @default(cuid())  userId                String  type                  MemoryType  title                 String  description           String?  value                 Json  confidence            Int  verified              Boolean @default(false)  sourceDocumentId      String?  sourceCandidateId     String?  reviewedBy            String?  reviewedAt            DateTime?  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  updatedAt DateTime @updatedAt  @@index([userId])  @@index([type])  @@index([verified])}model MedicalMemoryCandidate {  id                   String @id @default(cuid())  documentId           String  extractedType        MemoryType  extractedValue       Json  extractedText        String? @db.Text  confidence           Int  reviewStatus         ReviewStatus @default(PENDING)  reviewedBy           String?  reviewedAt           DateTime?  reviewNotes          String? @db.Text  document VaultDocument @relation(    fields: [documentId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([reviewStatus])  @@index([confidence])}
+What comes next (Part 2)
+Part 2 will add the first real moat layer:
+TravelHealthSessionJourneyTimelineEventProviderProviderAvailabilityProviderReviewMedicationActiveIngredientCountryMedicationMedicationEquivalentDrugInteraction
+That section defines the Healthcare Navigation Engine and Medication Intelligence Engine. After that we'll move to Part 3 (Interpreter + Outcomes + Organizations) and Part 4 (Agent OS + Audit + Notifications + Review System).  schema.prisma Part 2 — Journey + Provider + Medication Intelligence
+This is where SwasthYatra stops being a document management system and becomes a Healthcare Navigation Platform.
+//// JOURNEY DOMAIN//enum JourneyStatus {  ACTIVE  RESOLVED  CANCELLED}enum SeverityLevel {  LOW  MEDIUM  HIGH  CRITICAL}enum CareRecommendation {  SELF_CARE  PHARMACY  CLINIC  HOSPITAL  EMERGENCY}model TravelHealthSession {  id                    String @id @default(cuid())  userId                String  title                 String?  country               String  city                  String?  latitude              Float?  longitude             Float?  language              String  symptoms              Json  duration              String?  severity              SeverityLevel  recommendation        CareRecommendation?  status                JourneyStatus                         @default(ACTIVE)  notes                 String? @db.Text  providerId            String?  outcomeId             String?  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  provider Provider? @relation(    fields: [providerId],    references: [id]  )  timeline JourneyTimelineEvent[]  createdAt DateTime @default(now())  updatedAt DateTime @updatedAt  @@index([userId])  @@index([country])  @@index([severity])  @@index([status])}model JourneyTimelineEvent {  id             String @id @default(cuid())  journeyId      String  eventType      String  title          String  description    String?  metadata       Json?  journey TravelHealthSession @relation(    fields: [journeyId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([journeyId])  @@index([eventType])}//// PROVIDER DOMAIN//enum ProviderType {  HOSPITAL  CLINIC  PHARMACY  TELEMEDICINE}enum ContactChannelType {  PHONE  EMAIL  WEBSITE  WHATSAPP}model Provider {  id                 String @id @default(cuid())  externalId         String?  name               String  providerType       ProviderType  country            String  city               String?  address            String?  latitude           Float?  longitude          Float?  phone              String?  website            String?  languages          String[]  specialties        String[]  insuranceAccepted  String[]  averageRating      Float?  reviewCount        Int @default(0)  verified           Boolean @default(false)  source             String?  reviews            ProviderReview[]  availability       ProviderAvailability[]  channels           ProviderContactChannel[]  journeys           TravelHealthSession[]  createdAt          DateTime @default(now())  updatedAt          DateTime @updatedAt  @@index([country])  @@index([providerType])  @@index([verified])}model ProviderReview {  id                String @id @default(cuid())  providerId        String  userId            String  rating            Int  review            String?  provider Provider @relation(    fields: [providerId],    references: [id],    onDelete: Cascade  )  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([providerId])}model ProviderAvailability {  id                String @id @default(cuid())  providerId        String  dayOfWeek         Int  opensAt           String  closesAt          String  provider Provider @relation(    fields: [providerId],    references: [id],    onDelete: Cascade  )  @@index([providerId])}model ProviderContactChannel {  id                String @id @default(cuid())  providerId        String  type              ContactChannelType  value             String  primary           Boolean @default(false)  provider Provider @relation(    fields: [providerId],    references: [id],    onDelete: Cascade  )}//// PROVIDER ROUTING (V2 MOAT)//model ProviderRouting {  id                 String @id @default(cuid())  providerId         String  country            String  language           String?  specialty          String?  priorityScore      Int @default(0)  provider Provider @relation(    fields: [providerId],    references: [id],    onDelete: Cascade  )}model ProviderDispatcher {  id                 String @id @default(cuid())  providerId         String  active             Boolean @default(true)  maxDailyCapacity   Int?  currentLoad        Int @default(0)  provider Provider @relation(    fields: [providerId],    references: [id],    onDelete: Cascade  )}model ProviderInbox {  id                 String @id @default(cuid())  providerId         String  subject            String  content            String @db.Text  read               Boolean @default(false)  provider Provider @relation(    fields: [providerId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())}//// MEDICATION INTELLIGENCE DOMAIN//model ActiveIngredient {  id                 String @id @default(cuid())  name               String @unique  description        String?  medications        Medication[]  createdAt          DateTime @default(now())}model Medication {  id                  String @id @default(cuid())  activeIngredientId  String  brandName           String  manufacturer        String?  strength            String?  dosageForm          String?  ingredient ActiveIngredient @relation(    fields: [activeIngredientId],    references: [id],    onDelete: Cascade  )  countryMappings CountryMedication[]  createdAt DateTime @default(now())  @@index([brandName])}model CountryMedication {  id                   String @id @default(cuid())  medicationId         String  country              String  localBrandName       String  otc                  Boolean  prescriptionRequired Boolean  availability         String?  medication Medication @relation(    fields: [medicationId],    references: [id],    onDelete: Cascade  )  @@index([country])}model MedicationEquivalent {  id                   String @id @default(cuid())  sourceMedicationId   String  targetMedicationId   String  confidence           Int  sourceMedication Medication @relation(    "SourceMedication",    fields: [sourceMedicationId],    references: [id]  )  targetMedication Medication @relation(    "TargetMedication",    fields: [targetMedicationId],    references: [id]  )  @@index([sourceMedicationId])}model DrugInteraction {  id                   String @id @default(cuid())  medicationAId        String  medicationBId        String  severity             String  description          String  medicationA Medication @relation(    "InteractionA",    fields: [medicationAId],    references: [id]  )  medicationB Medication @relation(    "InteractionB",    fields: [medicationBId],    references: [id]  )  @@index([medicationAId])  @@index([medicationBId])}
+What Part 2 Adds
+This introduces the first real competitive moats:
+TravelHealthSession        ↓Provider Discovery        ↓Medication Intelligence        ↓Routing Logic
+Now the system can answer:
+"I'm in Tokyo.I have food poisoning.What should I do?"
+by:
+
+
+Creating a TravelHealthSession
+
+
+Assessing severity
+
+
+Finding nearby pharmacies/clinics
+
+
+Finding medication equivalents
+
+
+Routing to the best provider
+
+
+
+Part 3 (Next)
+Part 3 will add:
+InterpreterSessionConversationMessageInterpreterContextOutcomeInsightMedicationOutcomeProviderOutcomeOutcomeAggregationOrganizationOrganizationMemberOrganizationInvitation
+This is where the Interpreter Moat and Outcome Graph Moat appear.  schema.prisma Part 3 — Interpreter + Outcome Intelligence + Organizations
+This is where SwasthYatra evolves from navigation into a healthcare coordination platform.
+//// INTERPRETER DOMAIN//enum InterpreterStatus {  CREATED  ACTIVE  PAUSED  COMPLETED  FAILED}enum SpeakerType {  PATIENT  PROVIDER  SYSTEM  AGENT}model InterpreterSession {  id                    String @id @default(cuid())  journeyId             String  sourceLanguage        String  targetLanguage        String  status                InterpreterStatus                         @default(CREATED)  startedAt             DateTime?  endedAt               DateTime?  totalMessages         Int @default(0)  durationSeconds       Int?  journey TravelHealthSession @relation(    fields: [journeyId],    references: [id],    onDelete: Cascade  )  messages ConversationMessage[]  context InterpreterContext?  createdAt DateTime @default(now())  @@index([journeyId])  @@index([status])}model ConversationMessage {  id                    String @id @default(cuid())  sessionId             String  speaker               SpeakerType  originalText          String @db.Text  translatedText        String? @db.Text  detectedLanguage      String?  confidence            Float?  metadata              Json?  session InterpreterSession @relation(    fields: [sessionId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([sessionId])}model InterpreterContext {  id                    String @id @default(cuid())  sessionId             String @unique  allergies             Json?  medications           Json?  conditions            Json?  emergencyInfo         Json?  providerNotes         Json?  session InterpreterSession @relation(    fields: [sessionId],    references: [id],    onDelete: Cascade  )}//// OUTCOME INTELLIGENCE DOMAIN//enum RecoveryStatus {  UNKNOWN  IMPROVING  RECOVERED  ESCALATED  HOSPITALIZED}model OutcomeInsight {  id                    String @id @default(cuid())  journeyId             String @unique  summary               String? @db.Text  recoveryStatus        RecoveryStatus  recoveryHours         Int?  confidence            Int?  recommendations       Json?  createdAt             DateTime @default(now())  updatedAt             DateTime @updatedAt  journey TravelHealthSession @relation(    fields: [journeyId],    references: [id],    onDelete: Cascade  )  medicationOutcomes MedicationOutcome[]  providerOutcomes ProviderOutcome[]}model MedicationOutcome {  id                    String @id @default(cuid())  outcomeId             String  medicationId          String  effectivenessScore    Int?  sideEffects           Json?  notes                 String? @db.Text  outcome OutcomeInsight @relation(    fields: [outcomeId],    references: [id],    onDelete: Cascade  )  medication Medication @relation(    fields: [medicationId],    references: [id]  )  @@index([medicationId])}model ProviderOutcome {  id                    String @id @default(cuid())  outcomeId             String  providerId            String  satisfactionScore     Int?  waitTimeMinutes       Int?  costEstimate          Float?  notes                 String? @db.Text  outcome OutcomeInsight @relation(    fields: [outcomeId],    references: [id],    onDelete: Cascade  )  provider Provider @relation(    fields: [providerId],    references: [id]  )  @@index([providerId])}model OutcomeAggregation {  id                    String @id @default(cuid())  country               String  symptom               String  providerType          ProviderType?  medicationName        String?  totalCases            Int @default(0)  recoveredCases        Int @default(0)  averageRecoveryHours  Float?  updatedAt             DateTime @updatedAt  @@unique([    country,    symptom,    providerType,    medicationName  ])}//// ORGANIZATION DOMAIN//enum OrganizationType {  HOSPITAL  CLINIC  PHARMACY_CHAIN  TELEMEDICINE  NGO}enum OrganizationRole {  OWNER  ADMIN  OPERATOR  DOCTOR  PHARMACIST  ASSISTANT}enum InvitationStatus {  PENDING  ACCEPTED  EXPIRED  REVOKED}model Organization {  id                    String @id @default(cuid())  name                  String  slug                  String @unique  organizationType      OrganizationType  country               String  city                  String?  website               String?  logoUrl               String?  description           String? @db.Text  members               OrganizationMember[]  invitations           OrganizationInvitation[]  createdAt             DateTime @default(now())  updatedAt             DateTime @updatedAt  @@index([slug])}model OrganizationMember {  id                    String @id @default(cuid())  organizationId        String  userId                String  role                  OrganizationRole  joinedAt              DateTime @default(now())  organization Organization @relation(    fields: [organizationId],    references: [id],    onDelete: Cascade  )  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  @@unique([    organizationId,    userId  ])}model OrganizationInvitation {  id                    String @id @default(cuid())  organizationId        String  email                 String  role                  OrganizationRole  token                 String @unique  status                InvitationStatus                         @default(PENDING)  expiresAt             DateTime  organization Organization @relation(    fields: [organizationId],    references: [id],    onDelete: Cascade  )  createdAt             DateTime @default(now())  @@index([email])  @@index([token])}//// COUNTRY HEALTHCARE INTELLIGENCE//model CountryHealthcareProfile {  id                    String @id @default(cuid())  country               String @unique  emergencyNumber       String?  ambulanceNumber       String?  healthcareSystem      String?  primaryLanguage       String?  currency              String?  emergencyNotes        String? @db.Text  pharmacyGuidelines    String? @db.Text  insuranceGuidelines   String? @db.Text  metadata              Json?  updatedAt             DateTime @updatedAt}
+
+What Part 3 Introduces
+Interpreter Moat
+Patient    ↓Deepgram    ↓Translation    ↓Healthcare Context    ↓Provider
+Unlike generic translators, this layer understands:
+AllergiesConditionsMedicationsEmergency Information
+
+Outcome Graph
+Symptom    ↓Medication    ↓Provider    ↓Outcome
+This eventually becomes proprietary healthcare navigation intelligence.
+
+B2B Infrastructure
+HospitalClinicPharmacy ChainTelemedicine Network
+can now operate through:
+OrganizationOrganizationMemberOrganizationInvitation
+
+Part 4 (Next)
+Part 4 completes the schema with:
+AgentTaskAgentNodeExecutionAgentToolCallAgentApprovalAuditLogNotificationNotificationPreferenceNotificationTemplateReviewTaskReviewCommentReviewQueueConfig
+This is the final schema section and completes the Agent OS, Audit System, Notification System, and Human Review Layer.
+
+
+schema.prisma Part 4 — Agent OS + Audit + Notifications + Human Review
+This is the final schema layer. After this, the entire database architecture is essentially complete.
+//// AGENT OPERATING SYSTEM//enum AgentTaskStatus {  CREATED  RUNNING  WAITING_APPROVAL  COMPLETED  FAILED  CANCELLED}enum AgentNodeStatus {  PENDING  RUNNING  COMPLETED  FAILED}enum AgentApprovalStatus {  PENDING  APPROVED  REJECTED}enum AgentToolType {  PASSPORT  MEMORY  PROVIDER  MEDICATION  JOURNEY  INTERPRETER  OUTCOME  ORGANIZATION}model AgentTask {  id                    String @id @default(cuid())  journeyId             String?  userId                String  goal                  String  status                AgentTaskStatus  currentStep           String?  confidence            Float?  metadata              Json?  startedAt             DateTime?  completedAt           DateTime?  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  nodeExecutions AgentNodeExecution[]  toolCalls AgentToolCall[]  approvals AgentApproval[]  createdAt DateTime @default(now())  @@index([userId])  @@index([status])}model AgentNodeExecution {  id                    String @id @default(cuid())  taskId                String  nodeName              String  status                AgentNodeStatus  input                 Json?  output                Json?  durationMs            Int?  error                 String?  task AgentTask @relation(    fields: [taskId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([taskId])}model AgentToolCall {  id                    String @id @default(cuid())  taskId                String  toolType              AgentToolType  toolName              String  input                 Json?  output                Json?  success               Boolean  latencyMs             Int?  task AgentTask @relation(    fields: [taskId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  @@index([taskId])}model AgentApproval {  id                    String @id @default(cuid())  taskId                String  requestedAction       String  reason                String?  status                AgentApprovalStatus                         @default(PENDING)  approvedBy            String?  approvedAt            DateTime?  task AgentTask @relation(    fields: [taskId],    references: [id],    onDelete: Cascade  )  @@index([status])}//// AUDIT DOMAIN//enum AuditEventType {  USER_CREATED  PASSPORT_CREATED  PASSPORT_UPDATED  PASSPORT_SHARED  PASSPORT_REVOKED  DOCUMENT_UPLOADED  DOCUMENT_DELETED  MEMORY_APPROVED  MEMORY_REJECTED  JOURNEY_CREATED  JOURNEY_UPDATED  JOURNEY_CLOSED  PROVIDER_VIEWED  PROVIDER_CONTACTED  INTERPRETER_STARTED  INTERPRETER_ENDED  OUTCOME_CREATED  ORGANIZATION_CREATED  MEMBER_INVITED  MEMBER_REMOVED  ROLE_CHANGED  AGENT_EXECUTED}model AuditLog {  id                    String @id @default(cuid())  actorId               String?  eventType             AuditEventType  resourceType          String  resourceId            String  metadata              Json?  ipAddress             String?  userAgent             String?  actor User? @relation(    fields: [actorId],    references: [id]  )  createdAt DateTime @default(now())  @@index([eventType])  @@index([resourceType])  @@index([resourceId])}//// NOTIFICATIONS//enum NotificationType {  EMAIL  IN_APP  SMS  WHATSAPP}enum NotificationStatus {  PENDING  SENT  FAILED  READ}model Notification {  id                    String @id @default(cuid())  userId                String  title                 String  body                  String  type                  NotificationType  status                NotificationStatus  metadata              Json?  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())  readAt DateTime?  @@index([userId])}model NotificationPreference {  id                    String @id @default(cuid())  userId                String @unique  emailEnabled          Boolean @default(true)  smsEnabled            Boolean @default(false)  whatsappEnabled       Boolean @default(false)  inAppEnabled          Boolean @default(true)  user User @relation(    fields: [userId],    references: [id],    onDelete: Cascade  )}model NotificationTemplate {  id                    String @id @default(cuid())  key                   String @unique  title                 String  body                  String  type                  NotificationType  active                Boolean @default(true)  createdAt             DateTime @default(now())}//// HUMAN REVIEW SYSTEM//enum ReviewTaskType {  MEMORY_REVIEW  PROVIDER_REVIEW  OUTCOME_REVIEW  DOCUMENT_REVIEW}enum ReviewTaskStatus {  OPEN  ASSIGNED  APPROVED  REJECTED  CLOSED}model ReviewTask {  id                    String @id @default(cuid())  type                  ReviewTaskType  resourceType          String  resourceId            String  status                ReviewTaskStatus  assignedTo            String?  priority              Int @default(0)  metadata              Json?  comments              ReviewComment[]  createdAt             DateTime @default(now())  @@index([status])}model ReviewComment {  id                    String @id @default(cuid())  reviewTaskId          String  authorId             String?  comment              String @db.Text  reviewTask ReviewTask @relation(    fields: [reviewTaskId],    references: [id],    onDelete: Cascade  )  createdAt DateTime @default(now())}model ReviewQueueConfig {  id                    String @id @default(cuid())  queueName             String @unique  enabled               Boolean @default(true)  autoAssignment        Boolean @default(false)  slaHours              Int?  metadata              Json?}
+
+Database Status After Part 4
+You now have the complete architecture:
+AUTH├── User├── Account├── Session└── VerificationTokenPASSPORT├── HealthPassport├── PassportShareLink└── PassportAccessLogVAULT├── VaultDocument└── VaultAuditLogMEMORY├── MedicalMemory└── MedicalMemoryCandidateJOURNEYS├── TravelHealthSession└── JourneyTimelineEventMEDICATION├── Medication├── ActiveIngredient├── CountryMedication├── MedicationEquivalent└── DrugInteractionPROVIDERS├── Provider├── ProviderReview├── ProviderAvailability├── ProviderContactChannel├── ProviderRouting├── ProviderDispatcher└── ProviderInboxINTERPRETER├── InterpreterSession├── ConversationMessage└── InterpreterContextOUTCOMES├── OutcomeInsight├── MedicationOutcome├── ProviderOutcome└── OutcomeAggregationORGANIZATIONS├── Organization├── OrganizationMember└── OrganizationInvitationAGENT OS├── AgentTask├── AgentNodeExecution├── AgentToolCall└── AgentApprovalAUDIT└── AuditLogNOTIFICATIONS├── Notification├── NotificationPreference└── NotificationTemplateREVIEW├── ReviewTask├── ReviewComment└── ReviewQueueConfigCOUNTRY INTELLIGENCE└── CountryHealthcareProfile
+
+Next (B)
+The next artifact is ownership.ts — the IDOR prevention layer.
+This is arguably the most important backend security file in the entire repository because every protected query passes through it. It defines:
+assertPassportOwnership()assertJourneyOwnership()assertMemoryOwnership()assertDocumentOwnership()assertOrganizationMembership()assertProviderAccess()
+and prevents unauthorized access to healthcare data.
+
+src/server/security/ownership.ts
+This is arguably the most important backend file in the entire system.
+Without it:
+IDORBroken Access ControlHorizontal Privilege EscalationData Leaks
+become possible.
+The rule is:
+
+Every query touching user-owned healthcare data must pass through ownership assertions.
+
+
+// src/server/security/ownership.tsimport { prisma } from "@/server/db";import { AppError } from "@/server/errors/app-error";export class OwnershipError extends AppError {  constructor(message = "Resource access denied") {    super(message, 403, "OWNERSHIP_ERROR");  }}/** * Generic assertion helper */function assertOwnership(  condition: boolean,  resource: string): void {  if (!condition) {    throw new OwnershipError(      `You do not own this ${resource}`    );  }}
+
+Passport Ownership
+export async function assertPassportOwnership(  passportId: string,  userId: string) {  const passport =    await prisma.healthPassport.findFirst({      where: {        id: passportId,        userId      }    });  if (!passport) {    throw new OwnershipError(      "Passport access denied"    );  }  return passport;}
+
+Journey Ownership
+export async function assertJourneyOwnership(  journeyId: string,  userId: string) {  const journey =    await prisma.travelHealthSession.findFirst({      where: {        id: journeyId,        userId      }    });  if (!journey) {    throw new OwnershipError(      "Journey access denied"    );  }  return journey;}
+
+Document Ownership
+export async function assertDocumentOwnership(  documentId: string,  userId: string) {  const document =    await prisma.vaultDocument.findFirst({      where: {        id: documentId,        userId      }    });  if (!document) {    throw new OwnershipError(      "Document access denied"    );  }  return document;}
+
+Medical Memory Ownership
+export async function assertMemoryOwnership(  memoryId: string,  userId: string) {  const memory =    await prisma.medicalMemory.findFirst({      where: {        id: memoryId,        userId      }    });  if (!memory) {    throw new OwnershipError(      "Medical memory access denied"    );  }  return memory;}
+
+Memory Candidate Ownership
+export async function assertCandidateOwnership(  candidateId: string,  userId: string) {  const candidate =    await prisma.medicalMemoryCandidate.findFirst({      where: {        id: candidateId,        document: {          userId        }      }    });  if (!candidate) {    throw new OwnershipError(      "Candidate access denied"    );  }  return candidate;}
+
+Outcome Ownership
+export async function assertOutcomeOwnership(  outcomeId: string,  userId: string) {  const outcome =    await prisma.outcomeInsight.findFirst({      where: {        id: outcomeId,        journey: {          userId        }      }    });  if (!outcome) {    throw new OwnershipError(      "Outcome access denied"    );  }  return outcome;}
+
+Interpreter Session Ownership
+export async function assertInterpreterOwnership(  sessionId: string,  userId: string) {  const session =    await prisma.interpreterSession.findFirst({      where: {        id: sessionId,        journey: {          userId        }      }    });  if (!session) {    throw new OwnershipError(      "Interpreter session access denied"    );  }  return session;}
+
+Organization Membership
+Not ownership.
+Membership.
+export async function assertOrganizationMembership(  organizationId: string,  userId: string) {  const membership =    await prisma.organizationMember.findFirst({      where: {        organizationId,        userId      }    });  if (!membership) {    throw new OwnershipError(      "Organization access denied"    );  }  return membership;}
+
+Organization Admin
+export async function assertOrganizationAdmin(  organizationId: string,  userId: string) {  const membership =    await prisma.organizationMember.findFirst({      where: {        organizationId,        userId,        role: {          in: ["OWNER", "ADMIN"]        }      }    });  if (!membership) {    throw new OwnershipError(      "Organization admin access required"    );  }  return membership;}
+
+Passport Share Access
+Public passport links.
+export async function assertValidPassportShare(  token: string) {  const share =    await prisma.passportShareLink.findFirst({      where: {        token,        revoked: false,        expiresAt: {          gt: new Date()        }      },      include: {        passport: true      }    });  if (!share) {    throw new OwnershipError(      "Invalid share link"    );  }  return share;}
+
+Provider Access
+Providers cannot access arbitrary passports.
+export async function assertProviderPassportAccess(  token: string) {  return assertValidPassportShare(token);}
+
+Resource Resolver
+Useful for audit layer.
+export async function assertResourceOwnership(  resourceType: string,  resourceId: string,  userId: string) {  switch (resourceType) {    case "passport":      return assertPassportOwnership(        resourceId,        userId      );    case "journey":      return assertJourneyOwnership(        resourceId,        userId      );    case "document":      return assertDocumentOwnership(        resourceId,        userId      );    case "memory":      return assertMemoryOwnership(        resourceId,        userId      );    case "outcome":      return assertOutcomeOwnership(        resourceId,        userId      );    default:      throw new Error(        `Unknown resource type: ${resourceType}`      );  }}
+
+Usage Example
+Never:
+const passport =  await prisma.healthPassport.findUnique({    where: {      id: passportId    }  });
+
+Always:
+const passport =  await assertPassportOwnership(    passportId,    session.user.id  );
+
+Design Rule
+Every Server Action follows:
+1. Authenticate2. Authorize3. Ownership Check4. Execute5. Audit Log6. Analytics Event7. Return Result
+Example:
+export async function updatePassport(  passportId: string,  input: UpdatePassportInput) {  const session = await auth();  if (!session?.user?.id) {    throw new Error("Unauthorized");  }  const passport =    await assertPassportOwnership(      passportId,      session.user.id    );  const updated =    await prisma.healthPassport.update({      where: {        id: passport.id      },      data: input    });  await audit.log({    actorId: session.user.id,    eventType: "PASSPORT_UPDATED",    resourceId: passport.id  });  return updated;}
+This file alone eliminates the majority of healthcare SaaS security vulnerabilities caused by IDOR and broken object-level authorization.
+Next should be permissions.ts (RBAC layer with the full role/permission matrix), followed by audit.service.ts.
+
+
+src/server/security/permissions.ts
+This is the RBAC engine.
+While ownership.ts answers:
+Do you own this?
+permissions.ts answers:
+Are you allowed to do this?
+
+// src/server/security/permissions.tsimport { Role } from "@prisma/client";import { AppError } from "@/server/errors/app-error";export enum Permission {  // Passport  VIEW_PASSPORT = "VIEW_PASSPORT",  EDIT_PASSPORT = "EDIT_PASSPORT",  SHARE_PASSPORT = "SHARE_PASSPORT",  // Memory  VIEW_MEMORY = "VIEW_MEMORY",  APPROVE_MEMORY = "APPROVE_MEMORY",  REJECT_MEMORY = "REJECT_MEMORY",  // Vault  UPLOAD_DOCUMENT = "UPLOAD_DOCUMENT",  DELETE_DOCUMENT = "DELETE_DOCUMENT",  // Journey  CREATE_JOURNEY = "CREATE_JOURNEY",  UPDATE_JOURNEY = "UPDATE_JOURNEY",  CLOSE_JOURNEY = "CLOSE_JOURNEY",  // Provider  VIEW_PROVIDER = "VIEW_PROVIDER",  REVIEW_PROVIDER = "REVIEW_PROVIDER",  // Interpreter  START_INTERPRETER = "START_INTERPRETER",  // Outcomes  VIEW_OUTCOME = "VIEW_OUTCOME",  // Organizations  CREATE_ORGANIZATION = "CREATE_ORGANIZATION",  INVITE_MEMBER = "INVITE_MEMBER",  REMOVE_MEMBER = "REMOVE_MEMBER",  VIEW_ORGANIZATION = "VIEW_ORGANIZATION",  // Review  ASSIGN_REVIEW_TASK = "ASSIGN_REVIEW_TASK",  COMPLETE_REVIEW_TASK = "COMPLETE_REVIEW_TASK",  // Agent  EXECUTE_AGENT = "EXECUTE_AGENT",  // Admin  VIEW_AUDIT_LOGS = "VIEW_AUDIT_LOGS",  MANAGE_USERS = "MANAGE_USERS",  MANAGE_SYSTEM = "MANAGE_SYSTEM"}
+
+Permission Matrix
+const ROLE_PERMISSIONS: Record<Role, Permission[]> = {  PATIENT: [    Permission.VIEW_PASSPORT,    Permission.EDIT_PASSPORT,    Permission.SHARE_PASSPORT,    Permission.VIEW_MEMORY,    Permission.UPLOAD_DOCUMENT,    Permission.CREATE_JOURNEY,    Permission.UPDATE_JOURNEY,    Permission.CLOSE_JOURNEY,    Permission.VIEW_PROVIDER,    Permission.REVIEW_PROVIDER,    Permission.START_INTERPRETER,    Permission.VIEW_OUTCOME,    Permission.EXECUTE_AGENT  ],  DOCTOR: [    Permission.VIEW_PROVIDER,    Permission.VIEW_MEMORY,    Permission.APPROVE_MEMORY,    Permission.REJECT_MEMORY,    Permission.COMPLETE_REVIEW_TASK,    Permission.VIEW_OUTCOME,    Permission.EXECUTE_AGENT  ],  PHARMACIST: [    Permission.VIEW_PROVIDER,    Permission.VIEW_MEMORY,    Permission.COMPLETE_REVIEW_TASK,    Permission.EXECUTE_AGENT  ],  MEDICAL_ASSISTANT: [    Permission.VIEW_MEMORY,    Permission.COMPLETE_REVIEW_TASK,    Permission.VIEW_PROVIDER  ],  ORG_OPERATOR: [    Permission.VIEW_ORGANIZATION,    Permission.INVITE_MEMBER,    Permission.VIEW_PROVIDER,    Permission.COMPLETE_REVIEW_TASK  ],  ORG_ADMIN: [    Permission.VIEW_ORGANIZATION,    Permission.INVITE_MEMBER,    Permission.REMOVE_MEMBER,    Permission.ASSIGN_REVIEW_TASK,    Permission.COMPLETE_REVIEW_TASK,    Permission.VIEW_AUDIT_LOGS,    Permission.EXECUTE_AGENT  ],  SUPER_ADMIN: Object.values(Permission)};
+
+Permission Check
+export function hasPermission(  role: Role,  permission: Permission): boolean {  return ROLE_PERMISSIONS[role]?.includes(permission);}
+
+Assertion Helper
+export class PermissionDeniedError extends AppError {  constructor(permission: Permission) {    super(      `Missing permission: ${permission}`,      403,      "PERMISSION_DENIED"    );  }}
+
+export function assertPermission(  role: Role,  permission: Permission) {  if (!hasPermission(role, permission)) {    throw new PermissionDeniedError(permission);  }}
+
+Multi Permission Check
+export function assertAnyPermission(  role: Role,  permissions: Permission[]) {  const allowed = permissions.some((permission) =>    hasPermission(role, permission)  );  if (!allowed) {    throw new PermissionDeniedError(      permissions[0]    );  }}
+
+Organization Roles
+Organization roles are separate from platform roles.
+export enum OrganizationPermission {  MANAGE_MEMBERS = "MANAGE_MEMBERS",  MANAGE_SETTINGS = "MANAGE_SETTINGS",  VIEW_ANALYTICS = "VIEW_ANALYTICS",  REVIEW_CASES = "REVIEW_CASES",  MANAGE_INBOX = "MANAGE_INBOX"}
+
+export const ORGANIZATION_ROLE_PERMISSIONS = {  OWNER: [    OrganizationPermission.MANAGE_MEMBERS,    OrganizationPermission.MANAGE_SETTINGS,    OrganizationPermission.VIEW_ANALYTICS,    OrganizationPermission.REVIEW_CASES,    OrganizationPermission.MANAGE_INBOX  ],  ADMIN: [    OrganizationPermission.MANAGE_MEMBERS,    OrganizationPermission.VIEW_ANALYTICS,    OrganizationPermission.REVIEW_CASES,    OrganizationPermission.MANAGE_INBOX  ],  OPERATOR: [    OrganizationPermission.REVIEW_CASES,    OrganizationPermission.MANAGE_INBOX  ],  DOCTOR: [    OrganizationPermission.REVIEW_CASES  ],  PHARMACIST: [    OrganizationPermission.REVIEW_CASES  ],  ASSISTANT: []};
+
+Organization Permission Assertion
+export function assertOrganizationPermission(  role: string,  permission: OrganizationPermission) {  const permissions =    ORGANIZATION_ROLE_PERMISSIONS[      role as keyof typeof ORGANIZATION_ROLE_PERMISSIONS    ] ?? [];  if (!permissions.includes(permission)) {    throw new PermissionDeniedError(      permission as any    );  }}
+
+Route Protection Helper
+export async function requirePermission(  session: {    user?: {      role?: Role;    };  },  permission: Permission) {  const role = session.user?.role;  if (!role) {    throw new PermissionDeniedError(      permission    );  }  assertPermission(role, permission);}
+
+Usage Example
+export async function approveCandidate(  candidateId: string) {  const session = await auth();  await requirePermission(    session,    Permission.APPROVE_MEMORY  );  const candidate =    await prisma.medicalMemoryCandidate.findUnique({      where: {        id: candidateId      }    });  // approval logic}
+
+Security Flow
+Every protected action follows:
+Request    ↓Auth.js    ↓Role Extraction    ↓Permission Check    ↓Ownership Check    ↓Business Logic    ↓Audit Log    ↓Response
+
+Platform Permission Matrix
+CapabilityPatientDoctorPharmacistOrg AdminSuper AdminView Passport✅Shared Only❌❌✅Edit Passport✅❌❌❌✅Share Passport✅❌❌❌✅Upload Documents✅❌❌❌✅Approve Memory❌✅❌✅✅Create Journey✅❌❌❌✅Review Provider✅✅✅✅✅Start Interpreter✅❌❌❌✅Manage Organization❌❌❌✅✅View Audit Logs❌❌❌✅✅
+
+This RBAC layer plus ownership.ts gives you:
+Authentication        +Authorization        +Ownership Validation        +Organization Access Control
+which covers the majority of access-control requirements for a healthcare platform.
+The next file in the reconstruction sequence should be:
+src/server/audit/audit.service.ts
+which becomes the compliance backbone for every write operation in the system.
+
+src/server/audit/audit.service.ts
+This file is the compliance backbone of the platform.
+Every important action must create an audit record.
+In healthcare systems, if an action is not auditable, it effectively didn't happen.
+
+// src/server/audit/audit.service.tsimport { prisma } from "@/server/db";import { AuditEventType } from "@prisma/client";export interface AuditContext {  actorId?: string;  eventType: AuditEventType;  resourceType: string;  resourceId: string;  metadata?: Record<string, unknown>;  ipAddress?: string;  userAgent?: string;}export class AuditService {  async log(context: AuditContext) {    return prisma.auditLog.create({      data: {        actorId: context.actorId,        eventType: context.eventType,        resourceType: context.resourceType,        resourceId: context.resourceId,        metadata: context.metadata,        ipAddress: context.ipAddress,        userAgent: context.userAgent      }    });  }}export const audit = new AuditService();
+
+Convenience Methods
+Instead of:
+await audit.log({  eventType: ...})
+everywhere.
+
+export class AuditService {  async log(context: AuditContext) {    return prisma.auditLog.create({      data: context    });  }  async passportCreated(    actorId: string,    passportId: string  ) {    return this.log({      actorId,      eventType: AuditEventType.PASSPORT_CREATED,      resourceType: "passport",      resourceId: passportId    });  }  async passportUpdated(    actorId: string,    passportId: string,    changes: unknown  ) {    return this.log({      actorId,      eventType:        AuditEventType.PASSPORT_UPDATED,      resourceType: "passport",      resourceId: passportId,      metadata: {        changes      }    });  }  async passportShared(    actorId: string,    passportId: string,    shareId: string  ) {    return this.log({      actorId,      eventType:        AuditEventType.PASSPORT_SHARED,      resourceType: "passport",      resourceId: passportId,      metadata: {        shareId      }    });  }}
+
+Journey Events
+async journeyCreated(  actorId: string,  journeyId: string) {  return this.log({    actorId,    eventType:      AuditEventType.JOURNEY_CREATED,    resourceType: "journey",    resourceId: journeyId  });}async journeyClosed(  actorId: string,  journeyId: string) {  return this.log({    actorId,    eventType:      AuditEventType.JOURNEY_CLOSED,    resourceType: "journey",    resourceId: journeyId  });}
+
+Document Events
+async documentUploaded(  actorId: string,  documentId: string) {  return this.log({    actorId,    eventType:      AuditEventType.DOCUMENT_UPLOADED,    resourceType: "document",    resourceId: documentId  });}async documentDeleted(  actorId: string,  documentId: string) {  return this.log({    actorId,    eventType:      AuditEventType.DOCUMENT_DELETED,    resourceType: "document",    resourceId: documentId  });}
+
+Medical Memory Events
+async memoryApproved(  actorId: string,  memoryId: string) {  return this.log({    actorId,    eventType:      AuditEventType.MEMORY_APPROVED,    resourceType: "memory",    resourceId: memoryId  });}async memoryRejected(  actorId: string,  memoryId: string) {  return this.log({    actorId,    eventType:      AuditEventType.MEMORY_REJECTED,    resourceType: "memory",    resourceId: memoryId  });}
+
+Interpreter Events
+async interpreterStarted(  actorId: string,  sessionId: string) {  return this.log({    actorId,    eventType:      AuditEventType.INTERPRETER_STARTED,    resourceType: "interpreter",    resourceId: sessionId  });}async interpreterEnded(  actorId: string,  sessionId: string) {  return this.log({    actorId,    eventType:      AuditEventType.INTERPRETER_ENDED,    resourceType: "interpreter",    resourceId: sessionId  });}
+
+Organization Events
+async memberInvited(  actorId: string,  organizationId: string,  email: string) {  return this.log({    actorId,    eventType:      AuditEventType.MEMBER_INVITED,    resourceType: "organization",    resourceId: organizationId,    metadata: {      email    }  });}async memberRemoved(  actorId: string,  organizationId: string,  userId: string) {  return this.log({    actorId,    eventType:      AuditEventType.MEMBER_REMOVED,    resourceType: "organization",    resourceId: organizationId,    metadata: {      removedUserId: userId    }  });}
+
+Agent Events
+async agentExecuted(  actorId: string,  taskId: string,  goal: string) {  return this.log({    actorId,    eventType:      AuditEventType.AGENT_EXECUTED,    resourceType: "agent_task",    resourceId: taskId,    metadata: {      goal    }  });}
+
+Search Audit Logs
+Useful for admin dashboard.
+async findResourceHistory(  resourceType: string,  resourceId: string) {  return prisma.auditLog.findMany({    where: {      resourceType,      resourceId    },    orderBy: {      createdAt: "desc"    }  });}
+
+User Audit Trail
+async findUserActivity(  userId: string) {  return prisma.auditLog.findMany({    where: {      actorId: userId    },    orderBy: {      createdAt: "desc"    }  });}
+
+Middleware Pattern
+Every action:
+export async function updatePassport(  passportId: string,  input: UpdatePassportInput) {  const session = await auth();  const passport =    await assertPassportOwnership(      passportId,      session.user.id    );  const updated =    await prisma.healthPassport.update({      where: {        id: passport.id      },      data: input    });  await audit.passportUpdated(    session.user.id,    passport.id,    input  );  return updated;}
+
+Audit Rules
+Every operation that changes state must be audited:
+CREATE  -> AuditUPDATE  -> AuditDELETE  -> AuditSHARE   -> AuditAPPROVE -> AuditREJECT  -> AuditINVITE  -> AuditEXECUTE -> Audit
+Never audit:
+Simple ReadsProvider SearchesPublic Metadata
+unless required by compliance.
+
+Compliance Philosophy
+The audit layer exists for:
+Who did it?When did they do it?What changed?Which resource changed?From where?
+If a hospital, regulator, or enterprise customer asks:
+
+"Who shared this passport three weeks ago?"
+
+the answer comes from audit.service.ts.
+
+Next file:
+packages/agent-core/workflows/travel-navigation.workflow.ts
+This is the actual LangGraph workflow and arguably the most valuable business-logic file in the entire repository because it encodes how SwasthYatra reasons about healthcare navigation.
+
+packages/agent-core/workflows/travel-navigation.workflow.ts
+This is arguably the single most valuable business-logic file in the platform.
+Not because it uses AI.
+Because it encodes:
+How SwasthYatra thinks.
+Everything else:
+UIDatabaseMapsProvidersInterpreter
+exists to support this workflow.
+
+Goal
+Convert:
+Traveler+Symptoms+Location
+into:
+Best Next Action
+
+LangGraph State
+// packages/agent-core/state/travel-health.state.tsimport {  TravelHealthSession,  HealthPassport,  MedicalMemory,  Provider} from "@prisma/client";export interface TravelHealthState {  userId: string;  journeyId: string;  goal: string;  symptoms: string[];  severity?: SeverityLevel;  recommendation?: CareRecommendation;  passport?: HealthPassport | null;  memories?: MedicalMemory[];  providers?: Provider[];  selectedProvider?: Provider;  medicationSuggestions?: MedicationResult[];  outcome?: string;  confidence?: number;  requiresHumanReview?: boolean;  messages: BaseMessage[];}
+
+Graph Structure
+START↓LOAD_CONTEXT↓SEVERITY↓ROUTER├── SELF_CARE├── PHARMACY├── CLINIC├── HOSPITAL└── EMERGENCY↓PROVIDER_SEARCH↓MEDICATION_SEARCH↓INTERPRETER_PREP↓GENERATE_PLAN↓REFLECT↓END
+
+Workflow
+// travel-navigation.workflow.tsimport {  StateGraph,  END,  START} from "@langchain/langgraph";import { TravelHealthState } from "../state/travel-health.state";import {  loadContextNode,  severityNode,  routerNode,  providerNode,  medicationNode,  interpreterNode,  planNode,  reflectionNode} from "../nodes";
+
+Build Graph
+export function createTravelNavigationGraph() {  const workflow =    new StateGraph<TravelHealthState>();  workflow.addNode(    "LOAD_CONTEXT",    loadContextNode  );  workflow.addNode(    "SEVERITY",    severityNode  );  workflow.addNode(    "ROUTER",    routerNode  );  workflow.addNode(    "PROVIDER_SEARCH",    providerNode  );  workflow.addNode(    "MEDICATION_SEARCH",    medicationNode  );  workflow.addNode(    "INTERPRETER_PREP",    interpreterNode  );  workflow.addNode(    "PLAN",    planNode  );  workflow.addNode(    "REFLECT",    reflectionNode  );
+
+Edges
+workflow.addEdge(  START,  "LOAD_CONTEXT");workflow.addEdge(  "LOAD_CONTEXT",  "SEVERITY");workflow.addEdge(  "SEVERITY",  "ROUTER");workflow.addEdge(  "ROUTER",  "PROVIDER_SEARCH");workflow.addEdge(  "PROVIDER_SEARCH",  "MEDICATION_SEARCH");workflow.addEdge(  "MEDICATION_SEARCH",  "INTERPRETER_PREP");workflow.addEdge(  "INTERPRETER_PREP",  "PLAN");workflow.addEdge(  "PLAN",  "REFLECT");workflow.addEdge(  "REFLECT",  END);
+
+Compile
+return workflow.compile();}
+
+Node 1
+Load Context
+Purpose:
+Gather knowledge.
+export async function loadContextNode(  state: TravelHealthState): Promise<Partial<TravelHealthState>> {  const passport =    await passportTool.getPassport(      state.userId    );  const memories =    await memoryTool.getMemories(      state.userId    );  return {    passport,    memories  };}
+
+Node 2
+Severity Assessment
+Purpose:
+Determine urgency.
+export async function severityNode(  state: TravelHealthState) {  const result =    await llm.invoke(`Assess severity:Symptoms:${state.symptoms.join(",")}`);  return {    severity: result.severity  };}
+
+Node 3
+Router
+Purpose:
+Choose care pathway.
+export async function routerNode(  state: TravelHealthState) {  switch (state.severity) {    case "LOW":      return {        recommendation:          "SELF_CARE"      };    case "MEDIUM":      return {        recommendation:          "PHARMACY"      };    case "HIGH":      return {        recommendation:          "CLINIC"      };    case "CRITICAL":      return {        recommendation:          "EMERGENCY"      };  }}
+
+Node 4
+Provider Search
+Purpose:
+Find providers.
+export async function providerNode(  state: TravelHealthState) {  const providers =    await providerTool.searchNearby({      journeyId:        state.journeyId,      recommendation:        state.recommendation    });  return {    providers  };}
+
+Node 5
+Medication Search
+Purpose:
+Find country equivalents.
+export async function medicationNode(  state: TravelHealthState) {  const suggestions =    await medicationTool.search({      country:        state.country,      symptoms:        state.symptoms    });  return {    medicationSuggestions:      suggestions  };}
+
+Node 6
+Interpreter Prep
+Purpose:
+Prepare medical context.
+export async function interpreterNode(  state: TravelHealthState) {  return {    interpreterContext: {      allergies:        state.memories?.filter(          m => m.type === "ALLERGY"        ),      medications:        state.memories?.filter(          m => m.type === "MEDICATION"        )    }  };}
+
+Node 7
+Plan Generator
+Purpose:
+Generate final navigation plan.
+export async function planNode(  state: TravelHealthState) {  const plan =    await llm.invoke(`Create healthcare navigation plan.Severity:${state.severity}Recommendation:${state.recommendation}Providers:${JSON.stringify(  state.providers)}`);  return {    outcome: plan.content  };}
+
+Node 8
+Reflection
+Most important AI node.
+Purpose:
+Verify quality.
+export async function reflectionNode(  state: TravelHealthState) {  const review =    await llm.invoke(`Evaluate:Was the recommendation safe?Was provider selection valid?Confidence score?`);  return {    confidence:      review.confidence,    requiresHumanReview:      review.confidence < 0.7  };}
+
+Agent Tools
+Used by workflow.
+passportToolmemoryToolproviderToolmedicationTooljourneyToolinterpreterTooloutcomeTool
+
+Example Execution
+Input:
+{  "country":"Japan",  "city":"Tokyo",  "symptoms":[    "vomiting",    "diarrhea"  ]}
+Graph:
+LOAD_CONTEXT↓SEVERITY = MEDIUM↓ROUTER = PHARMACY↓PROVIDER_SEARCH↓MEDICATION_SEARCH↓INTERPRETER_PREP↓PLAN↓REFLECT
+Output:
+{  "severity":"MEDIUM",  "recommendation":"PHARMACY",  "provider":"Tokyo Pharmacy X",  "medication":"Equivalent of Oral Rehydration Salts",  "confidence":0.91}
+
+Why This File Is Valuable
+Most healthcare assistants are:
+Prompt↓Answer
+This workflow is:
+Reason↓Route↓Search↓Validate↓Reflect↓Recommend
+That difference is the foundation of the Healthcare Navigation Engine.
+
+Next file:
+src/modules/navigation/navigation-orchestrator.ts
+This file sits below the workflow and contains the deterministic routing logic used by the agent, APIs, dashboards, and emergency escalation system.
+
+
+src/modules/navigation/navigation-orchestrator.ts
+This is the deterministic brain of SwasthYatra.
+The LangGraph workflow reasons.
+The Navigation Orchestrator decides.
+This file must never depend on an LLM.
+Healthcare routing should be deterministic whenever possible.
+
+Purpose
+Convert:
+Symptoms+Severity+Location+Risk Factors
+Into:
+Care Recommendation
+
+File Structure
+src/modules/navigation/navigation-orchestrator.tsseverity-engine.tsescalation-engine.tscare-pathway.tsnavigation.types.ts
+
+Types
+// navigation.types.tsexport enum CarePathway {  SELF_CARE = "SELF_CARE",  PHARMACY = "PHARMACY",  CLINIC = "CLINIC",  HOSPITAL = "HOSPITAL",  EMERGENCY = "EMERGENCY"}export interface NavigationInput {  symptoms: string[];  duration?: string;  country: string;  age?: number;  allergies?: string[];  conditions?: string[];  pregnant?: boolean;}export interface NavigationDecision {  severity: SeverityLevel;  pathway: CarePathway;  reason: string;  confidence: number;  requiresHumanReview: boolean;}
+
+Severity Engine
+// severity-engine.tsconst CRITICAL_SYMPTOMS = [  "chest pain",  "difficulty breathing",  "stroke symptoms",  "unconscious",  "seizure",  "severe bleeding"];const HIGH_RISK_SYMPTOMS = [  "high fever",  "persistent vomiting",  "dehydration",  "severe abdominal pain"];
+
+export function determineSeverity(  symptoms: string[]): SeverityLevel {  const normalized =    symptoms.map(s => s.toLowerCase());  const critical =    normalized.some(symptom =>      CRITICAL_SYMPTOMS.includes(symptom)    );  if (critical) {    return "CRITICAL";  }  const high =    normalized.some(symptom =>      HIGH_RISK_SYMPTOMS.includes(symptom)    );  if (high) {    return "HIGH";  }  if (normalized.length >= 3) {    return "MEDIUM";  }  return "LOW";}
+
+Escalation Engine
+Certain conditions override severity.
+// escalation-engine.tsexport function applyEscalationRules(  severity: SeverityLevel,  input: NavigationInput): SeverityLevel {  if (    input.pregnant &&    severity === "HIGH"  ) {    return "CRITICAL";  }  if (    input.age &&    input.age > 75 &&    severity === "HIGH"  ) {    return "CRITICAL";  }  if (    input.conditions?.includes(      "heart disease"    )  ) {    return "CRITICAL";  }  return severity;}
+
+Pathway Selection
+// care-pathway.tsexport function selectCarePathway(  severity: SeverityLevel): CarePathway {  switch (severity) {    case "LOW":      return CarePathway.SELF_CARE;    case "MEDIUM":      return CarePathway.PHARMACY;    case "HIGH":      return CarePathway.CLINIC;    case "CRITICAL":      return CarePathway.EMERGENCY;    default:      return CarePathway.CLINIC;  }}
+
+Main Orchestrator
+// navigation-orchestrator.tsimport {  determineSeverity} from "./severity-engine";import {  applyEscalationRules} from "./escalation-engine";import {  selectCarePathway} from "./care-pathway";export class NavigationOrchestrator {  async route(    input: NavigationInput  ): Promise<NavigationDecision> {    let severity =      determineSeverity(        input.symptoms      );    severity =      applyEscalationRules(        severity,        input      );    const pathway =      selectCarePathway(        severity      );    return {      severity,      pathway,      reason:        this.buildReason(          severity,          pathway        ),      confidence: 0.95,      requiresHumanReview:        severity === "CRITICAL"    };  }  private buildReason(    severity: SeverityLevel,    pathway: CarePathway  ) {    return `Severity: ${severity}Recommended Pathway:${pathway}`;  }}
+
+Emergency Routing
+Critical cases bypass everything.
+export async function routeEmergency(  input: NavigationInput) {  return {    pathway: "EMERGENCY",    priority: 1,    immediateActions: [      "Call emergency services",      "Locate nearest hospital",      "Share emergency passport"    ]  };}
+
+Integration With Journey Creation
+export async function createJourney(  input: CreateJourneyInput) {  const decision =    await navigation.route({      symptoms: input.symptoms,      country: input.country,      age: input.age    });  const journey =    await prisma.travelHealthSession.create({      data: {        symptoms: input.symptoms,        severity:          decision.severity,        recommendation:          decision.pathway,        country: input.country,        userId: input.userId      }    });  return journey;}
+
+Integration With LangGraph
+The workflow calls:
+const decision =  await navigation.route({    symptoms: state.symptoms,    country: state.country,    age: state.age  });
+and stores:
+{  severity:    decision.severity,  recommendation:    decision.pathway}
+inside graph state.
+
+Future V2
+The orchestrator eventually becomes:
+Symptom Rules      +Outcome Graph      +Medication Graph      +Provider Graph      +Country Intelligence
+Example:
+Food Poisoning+Tokyo+Age 70+Diabetes↓Clinic↓English Speaking↓Open Now↓Covered By Insurance
+instead of simple severity routing.
+
+Why This File Matters
+Most health assistants are:
+User↓LLM↓Answer
+SwasthYatra is:
+User↓Deterministic Routing↓Provider Intelligence↓Medication Intelligence↓LLM↓Recommendation
+The orchestrator ensures that safety-critical decisions are rule-based, auditable, and reproducible.
+
+Next File (E)
+src/modules/provider/provider.service.ts
+This is one of the biggest moat files because it ranks providers using:
+
+
+distance
+
+
+language compatibility
+
+
+specialty matching
+
+
+insurance compatibility
+
+
+availability
+
+
+outcome scores
+
+
+instead of just showing a list of nearby hospitals.
+
+
+src/modules/provider/provider.service.ts
+This is one of the highest-value files in the platform.
+Why?
+Because most apps do:
+Nearby Providers↓Sort by Distance↓Show Results
+SwasthYatra does:
+Traveler Context+Symptoms+Language+Insurance+Availability+Past Outcomes↓Provider Ranking Engine↓Best Provider
+
+File Structure
+src/modules/provider/provider.service.tsprovider-ranking.tsprovider-matching.tsprovider-availability.tsprovider-search.ts
+
+Types
+// provider.types.tsexport interface ProviderSearchInput {  latitude: number;  longitude: number;  country: string;  symptoms?: string[];  language?: string;  insurance?: string;  providerType?: ProviderType;  radiusKm?: number;}export interface RankedProvider {  provider: Provider;  score: number;  distanceKm: number;  reasons: string[];}
+
+Provider Service
+// provider.service.tsimport { prisma } from "@/server/db";import { calculateDistance } from "./utils";import {  rankProviders} from "./provider-ranking";export class ProviderService {  async searchNearby(    input: ProviderSearchInput  ) {    const providers =      await prisma.provider.findMany({        where: {          country: input.country,          verified: true        },        include: {          availability: true,          reviews: true        }      });    const ranked =      await rankProviders(        providers,        input      );    return ranked;  }}export const providerService =  new ProviderService();
+
+Distance Calculation
+// utils.tsexport function calculateDistance(  lat1: number,  lon1: number,  lat2: number,  lon2: number) {  const R = 6371;  const dLat =    ((lat2 - lat1) * Math.PI) / 180;  const dLon =    ((lon2 - lon1) * Math.PI) / 180;  const a =    Math.sin(dLat / 2) *      Math.sin(dLat / 2) +    Math.cos(lat1) *      Math.cos(lat2) *    Math.sin(dLon / 2) *      Math.sin(dLon / 2);  return R * 2 * Math.atan2(    Math.sqrt(a),    Math.sqrt(1 - a)  );}
+
+Ranking Engine
+Most important logic.
+// provider-ranking.tsexport async function rankProviders(  providers: Provider[],  input: ProviderSearchInput): Promise<RankedProvider[]> {  const ranked =    providers.map(provider => {      let score = 0;      const reasons: string[] = [];      //      // Distance      //      const distance =        calculateDistance(          input.latitude,          input.longitude,          provider.latitude ?? 0,          provider.longitude ?? 0        );      if (distance < 2) {        score += 40;        reasons.push(          "Very close location"        );      }      else if (distance < 5) {        score += 25;      }      //      // Language Match      //      if (        input.language &&        provider.languages.includes(          input.language        )      ) {        score += 30;        reasons.push(          "Speaks your language"        );      }      //      // Insurance Match      //      if (        input.insurance &&        provider.insuranceAccepted.includes(          input.insurance        )      ) {        score += 20;        reasons.push(          "Accepts your insurance"        );      }      //      // Review Score      //      score +=        (provider.averageRating ?? 0) * 5;      //      // Verification Bonus      //      if (provider.verified) {        score += 15;      }      return {        provider,        score,        distanceKm: distance,        reasons      };    });  return ranked.sort(    (a, b) => b.score - a.score  );}
+
+Specialty Matching
+// provider-matching.tsconst SYMPTOM_SPECIALTY_MAP = {  "food poisoning":    "General Medicine",  "chest pain":    "Cardiology",  "skin rash":    "Dermatology",  "fracture":    "Orthopedics"};
+
+export function specialtyMatch(  symptoms: string[],  provider: Provider) {  let score = 0;  for (const symptom of symptoms) {    const specialty =      SYMPTOM_SPECIALTY_MAP[        symptom.toLowerCase()      ];    if (      specialty &&      provider.specialties.includes(        specialty      )    ) {      score += 25;    }  }  return score;}
+
+Availability Engine
+// provider-availability.tsexport function isOpenNow(  availability: ProviderAvailability[]) {  const now = new Date();  const day =    now.getDay();  const current =    now.toTimeString()      .slice(0, 5);  return availability.some(slot =>    slot.dayOfWeek === day &&    current >= slot.opensAt &&    current <= slot.closesAt  );}
+
+Outcome-Based Ranking (Moat)
+Future version.
+export async function outcomeScore(  providerId: string) {  const outcomes =    await prisma.providerOutcome.findMany({      where: {        providerId      }    });  if (!outcomes.length) {    return 0;  }  const avg =    outcomes.reduce(      (sum, item) =>        sum +        (item.satisfactionScore ?? 0),      0    ) / outcomes.length;  return avg * 10;}
+
+Search Action
+// search-provider.tsexport async function searchProvider(  input: ProviderSearchInput) {  const providers =    await providerService.searchNearby(      input    );  return providers.slice(0, 10);}
+
+Example Result
+Input:
+{  "country":"Japan",  "language":"English",  "symptoms":["food poisoning"]}
+Output:
+[  {    "provider":"Tokyo Medical Clinic",    "score":92,    "reasons":[      "Speaks your language",      "Very close location",      "Accepts your insurance"    ]  }]
+
+Future V2 Ranking Formula
+Current:
+Distance+Language+Insurance+Reviews
+Future:
+Distance+Language+Insurance+Availability+Outcome Score+Specialty Match+Journey Context+ Country Intelligence
+Example:
+Traveler↓Tokyo↓Food Poisoning↓English Speaker↓Insurance XYZ↓Open Now↓High Recovery Rate↓Best Provider
+
+Why This File Is Valuable
+Most platforms answer:
+Which providers are nearby?
+This file answers:
+Which provider gives this travelerthe highest probability of a good outcome?
+That difference is what eventually creates the Provider Graph and Outcome Intelligence moat.
+
+Next (F)
+The final reconstruction artifact is the complete repository skeleton:
+apps/packages/src/app/actions/components/modules/server/agent-core/healthcare-graph/database/ui/shared/types/
+with every major folder, file, ownership, dependency, and responsibility documented.
+
+
+SWASTHYATRA
+COMPLETE REPOSITORY SKELETON (PRODUCTION)
+This is the structure I would expect before V1 launch.
+The architecture is organized around business domains, not technical layers.
+Bad:
+components/services/utils/api/
+Good:
+passport/provider/medication/journey/
+because features scale better than technical folders.
+
+ROOT
+swasthyatra/├── apps/├── packages/├── infrastructure/├── docs/├── scripts/├── docker-compose.yml├── turbo.json├── package.json├── pnpm-workspace.yaml├── .env.example└── README.md
+
+APPS
+apps/└── web/
+Single Next.js application.
+
+WEB APP
+apps/web├── src/├── prisma/├── public/├── tests/├── middleware.ts├── next.config.ts├── tailwind.config.ts└── tsconfig.json
+
+SRC
+src/├── app/├── components/├── modules/├── server/├── hooks/├── stores/├── lib/├── config/├── styles/├── types/
+
+APP ROUTER
+src/app├── (marketing)├── (auth)├── (dashboard)├── api└── public
+
+MARKETING
+(marketing)├── page.tsx├── pricing/page.tsx├── about/page.tsx├── providers/page.tsx├── organizations/page.tsx└── contact/page.tsx
+
+AUTH
+(auth)├── sign-in/page.tsx├── sign-up/page.tsx├── error/page.tsx└── onboarding/
+
+ONBOARDING
+onboarding/├── profile/page.tsx├── medical/page.tsx├── allergies/page.tsx├── insurance/page.tsx├── emergency/page.tsx└── complete/page.tsx
+
+DASHBOARD
+(dashboard)├── dashboard/page.tsx├── passport/page.tsx├── vault/page.tsx├── memory/page.tsx├── journeys/page.tsx├── providers/page.tsx├── medications/page.tsx├── interpreter/page.tsx├── outcomes/page.tsx├── organizations/page.tsx├── notifications/page.tsx├── settings/page.tsx└── agent/page.tsx
+
+DYNAMIC ROUTES
+journeys/└── [journeyId]/providers/└── [providerId]/organizations/└── [organizationId]/passport/└── share/    └── [token]/
+
+API ROUTES
+src/app/api├── auth/├── upload/├── passport/share/├── interpreter/├── webhook/└── cron/
+
+COMPONENTS
+components/├── ui/├── layout/├── passport/├── provider/├── medication/├── journey/├── interpreter/├── outcome/├── organization/└── agent/
+
+UI
+ui/button.tsxcard.tsxinput.tsxtextarea.tsxdialog.tsxselect.tsxsheet.tsxtabs.tsxbadge.tsxspinner.tsxtoast.tsxskeleton.tsxtable.tsxcommand.tsxpopover.tsx
+
+MODULES
+Most important folder.
+Contains business logic.
+modules/passport/vault/memory/session/navigation/provider/medication/interpreter/outcome/organization/agent/notification/onboarding/user/
+
+PASSPORT MODULE
+passport/actions/services/repositories/validators/types/
+
+passport/actionsgenerate-passport.tsshare-passport.tsrevoke-passport.tsupdate-passport.ts
+
+passport/servicespassport.service.tspassport-builder.tspassport-exporter.ts
+
+VAULT MODULE
+vault/actions/pipeline/services/
+
+pipeline/upload.tsocr.tstranslate.tsextract.tspersist.ts
+
+MEMORY MODULE
+memory/actions/services/review/
+
+actions/approve-candidate.tsreject-candidate.tsmerge-memory.tsdelete-memory.ts
+
+SESSION MODULE
+session/actions/services/
+
+actions/create-journey.tsupdate-journey.tsclose-journey.tstimeline.ts
+
+NAVIGATION MODULE
+navigation/navigation-orchestrator.tsseverity-engine.tsescalation-engine.tscare-pathway.tsnavigation.types.ts
+
+PROVIDER MODULE
+provider/actions/services/ranking/matching/
+
+actions/search-provider.tsprovider-detail.tsreview-provider.tscontact-provider.ts
+
+services/provider.service.tsprovider-search.tsprovider-ranking.tsprovider-availability.ts
+
+MEDICATION MODULE
+medication/actions/services/
+
+actions/search-equivalent.tssearch-interactions.tsmedication-detail.ts
+
+INTERPRETER MODULE
+interpreter/actions/services/context/
+
+actions/start-session.tsprocess-audio.tsprocess-response.tsend-session.ts
+
+services/deepgram.service.tstranslation.service.tselevenlabs.service.ts
+
+OUTCOME MODULE
+outcome/actions/services/
+
+actions/record-outcome.tsgenerate-insight.ts
+
+services/outcome.service.tsaggregation.service.ts
+
+ORGANIZATION MODULE
+organization/actions/services/permissions/
+
+actions/create-org.tsinvite-member.tsaccept-invite.tsremove-member.ts
+
+AGENT MODULE
+agent/actions/services/
+
+actions/execute-goal.tsapprove-task.tshistory.ts
+
+SERVER
+Critical backend infrastructure.
+server/auth/db/audit/security/queues/storage/analytics/observability/
+
+AUTH
+auth/auth.tsauth.config.tsauth.callbacks.tsauth.roles.ts
+
+DB
+db/index.tsprisma.ts
+
+AUDIT
+audit/audit.service.ts
+
+SECURITY
+security/ownership.tspermissions.tsrate-limit.tsencryption.ts
+
+STORAGE
+storage/s3.tsminio.ts
+
+QUEUES
+queues/ocr.queue.tstranslation.queue.tsextraction.queue.tsoutcome.queue.ts
+
+ANALYTICS
+analytics/posthog.ts
+
+OBSERVABILITY
+observability/sentry.tslogger.tstelemetry.ts
+
+STORES (ZUSTAND)
+stores/sidebar.store.tstheme.store.tsinterpreter.store.tsagent.store.ts
+
+HOOKS
+hooks/use-passport.tsuse-provider-search.tsuse-interpreter.tsuse-notifications.ts
+
+CONFIG
+config/app.tsnavigation.tsfeatures.tsproviders.ts
+
+TYPES
+types/passport.tsprovider.tsmedication.tsjourney.tsagent.ts
+
+PRISMA
+prisma/schema.prismaseed.tsmigrations/
+
+TESTS
+tests/e2e/unit/integration/
+
+E2E
+e2e/onboarding.spec.tspassport.spec.tsprovider-search.spec.tsinterpreter.spec.tsorganization.spec.ts
+
+PACKAGES
+The monorepo's reusable engines.
+packages/agent-core/healthcare-graph/database/ui/shared/
+
+AGENT CORE
+Most valuable package.
+agent-core/state/nodes/tools/workflows/planner/reflection/
+
+workflows/travel-navigation.workflow.ts
+
+tools/passport.tool.tsmemory.tool.tsprovider.tool.tsmedication.tool.tsoutcome.tool.ts
+
+HEALTHCARE GRAPH
+This becomes the moat.
+healthcare-graph/medication/provider/outcomes/
+
+medication/equivalent.tsinteractions.tsingredient.ts
+
+provider/ranking.tsoutcome-score.ts
+
+DATABASE PACKAGE
+database/client.tsrepositories/
+
+UI PACKAGE
+Shared design system.
+ui/components/tokens/icons/
+
+SHARED PACKAGE
+shared/constants/schemas/utils/
+
+INFRASTRUCTURE
+infrastructure/docker/terraform/aws/
+
+docker/postgres/redis/minio/
+
+DOCS
+docs/PRD.mdARCHITECTURE.mdENGINEERING_SPEC.mdDATABASE.mdSECURITY.mdAGENT_OS.mdPROVIDER_GRAPH.mdOUTCOME_GRAPH.md
+
+WHAT ACTUALLY MATTERS
+If the repository were destroyed and you could only save a few directories:
+packages/agent-core/packages/healthcare-graph/src/modules/navigation/src/modules/provider/src/modules/medication/src/server/security/prisma/schema.prisma
+Those directories contain most of the proprietary logic:
+Healthcare Navigation EngineMedication Intelligence GraphProvider Ranking EngineOutcome Intelligence EngineSecurity LayerAgent Operating System
+Everything else (pages, forms, dashboards, UI components) can be rebuilt relatively quickly. The value of SwasthYatra lives in those engines and graphs.
+
+
+# DATABASE ARCHITECTURE
+
+## Primary Database
+
+**Amazon Aurora PostgreSQL (AWS)**
+
+Aurora PostgreSQL serves as the system of record for the entire SwasthYatra platform.
+
+All critical healthcare, navigation, provider, organization, and outcome data is persisted in Aurora.
+
+---
+
+## Why Aurora PostgreSQL?
+
+SwasthYatra is not a simple CRUD application.
+
+The platform requires:
+
+* Complex relational data
+* ACID transactions
+* Geospatial queries
+* High availability
+* Read scalability
+* Automated backups
+* Enterprise-grade reliability
+
+Aurora PostgreSQL provides all of these while maintaining full PostgreSQL compatibility.
+
+---
+
+## Why Not Standard PostgreSQL?
+
+While standard PostgreSQL is excellent, Aurora provides:
+
+### Higher Availability
+
+```text
+Multi-AZ replication
+
+Automatic failover
+
+Self-healing storage
+```
+
+Target Availability:
+
+```text
+99.99%
+```
+
+---
+
+### Better Scalability
+
+Aurora supports:
+
+```text
+Read Replicas
+
+Reader Endpoints
+
+Distributed Storage
+```
+
+This allows:
+
+```text
+Millions of provider lookups
+
+Passport retrieval
+
+Medication searches
+
+Outcome analytics
+```
+
+without overloading the primary writer node.
+
+---
+
+### Managed Operations
+
+Aurora removes operational burden:
+
+```text
+Automatic Backups
+
+Point-in-Time Recovery
+
+Storage Scaling
+
+Patch Management
+```
+
+The engineering team focuses on product development rather than database administration.
+
+---
+
+## PostgreSQL Extensions
+
+### PostGIS
+
+Aurora PostgreSQL will run with:
+
+```text
+PostGIS
+```
+
+enabled.
+
+Used for:
+
+* Nearby provider discovery
+* Hospital search
+* Pharmacy search
+* Distance calculations
+* Radius-based filtering
+
+Example:
+
+```sql
+Find providers within 5km
+Find pharmacies open nearby
+Find nearest emergency room
+```
+
+---
+
+## Database Access Layer
+
+Application access follows:
+
+```text
+Next.js
+    ↓
+Prisma ORM
+    ↓
+Aurora PostgreSQL
+```
+
+Prisma acts as the single database abstraction layer.
+
+No direct SQL queries from application code unless required for performance-critical operations.
+
+---
+
+## Database Domains
+
+Aurora stores all platform domains:
+
+### Identity
+
+```text
+User
+Account
+Session
+VerificationToken
+```
+
+### Passport
+
+```text
+HealthPassport
+PassportShareLink
+PassportAccessLog
+```
+
+### Journey
+
+```text
+TravelHealthSession
+JourneyTimelineEvent
+```
+
+### Medical Memory
+
+```text
+MedicalMemory
+MedicalMemoryCandidate
+```
+
+### Providers
+
+```text
+Provider
+ProviderAvailability
+ProviderReview
+ProviderRouting
+```
+
+### Medication Intelligence
+
+```text
+Medication
+ActiveIngredient
+CountryMedication
+MedicationEquivalent
+DrugInteraction
+```
+
+### Interpreter
+
+```text
+InterpreterSession
+ConversationMessage
+InterpreterContext
+```
+
+### Outcome Intelligence
+
+```text
+OutcomeInsight
+MedicationOutcome
+ProviderOutcome
+OutcomeAggregation
+```
+
+### Organizations
+
+```text
+Organization
+OrganizationMember
+OrganizationInvitation
+```
+
+### Agent Operating System
+
+```text
+AgentTask
+AgentNodeExecution
+AgentToolCall
+AgentApproval
+```
+
+### Security & Compliance
+
+```text
+AuditLog
+ReviewTask
+Notification
+```
+
+---
+
+## Read / Write Architecture
+
+### Writer Node
+
+Handles:
+
+```text
+Journey Creation
+
+Passport Updates
+
+Memory Approvals
+
+Provider Reviews
+
+Outcome Recording
+```
+
+---
+
+### Reader Nodes
+
+Handles:
+
+```text
+Provider Search
+
+Medication Search
+
+Dashboard Analytics
+
+Outcome Queries
+
+Reporting
+```
+
+This separation allows healthcare navigation workloads to scale independently.
+
+---
+
+## Prisma Configuration
+
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+```
+
+Environment Variables:
+
+```env
+DATABASE_URL=
+DIRECT_URL=
+```
+
+Writer endpoint uses:
+
+```env
+DATABASE_URL
+```
+
+Migration endpoint uses:
+
+```env
+DIRECT_URL
+```
+
+Reader endpoints may be introduced later for analytics workloads.
+
+---
+
+## Future Database Roadmap
+
+### Phase 1
+
+```text
+Aurora PostgreSQL
++
+PostGIS
+```
+
+### Phase 2
+
+```text
+Aurora PostgreSQL
++
+PostGIS
++
+pgvector
+```
+
+Used for:
+
+* Semantic medical memory search
+* Provider similarity
+* Outcome similarity
+
+### Phase 3
+
+```text
+Aurora PostgreSQL
++
+Healthcare Navigation Graph
++
+Outcome Intelligence Graph
+```
+
+where accumulated journey data becomes a proprietary decision-support system.
+
+---
+
+## Database Philosophy
+
+Aurora PostgreSQL is not merely storing records.
+
+It stores the Healthcare Navigation Graph.
+
+Every journey, provider interaction, medication lookup, interpreter session, and outcome contributes to a growing intelligence layer that improves future healthcare navigation recommendations.
+
+
+# SWASTHYATRA PRODUCTION INFRASTRUCTURE
+
+## Cloud Provider
+
+AWS
+
+---
+
+## Core Architecture
+
+```text
+Users
+    ↓
+CloudFront CDN
+    ↓
+Vercel (Next.js Application)
+    ↓
+Server Actions / Route Handlers
+    ↓
+Prisma ORM
+    ↓
+Amazon Aurora PostgreSQL
+```
+
+---
+
+# Data Layer
+
+## Amazon Aurora PostgreSQL
+
+Role:
+
+Primary System of Record
+
+Stores:
+
+* Users
+* Passports
+* Medical Memory
+* Travel Journeys
+* Providers
+* Organizations
+* Outcomes
+* Audit Logs
+* Agent Execution History
+
+Why Aurora:
+
+* PostgreSQL compatibility
+* Multi-AZ availability
+* Automatic failover
+* Read replicas
+* Enterprise reliability
+* Managed backups
+* Point-in-time recovery
+
+---
+
+## PostGIS
+
+Role:
+
+Geospatial Intelligence
+
+Used For:
+
+* Nearby hospitals
+* Nearby pharmacies
+* Distance calculations
+* Radius search
+* Emergency routing
+
+Example:
+
+```sql
+Find providers within 5km
+Find nearest emergency room
+Find pharmacies open now
+```
+
+---
+
+## Prisma ORM
+
+Role:
+
+Database Access Layer
+
+Used For:
+
+* Type-safe queries
+* Migrations
+* Schema management
+* Generated types
+
+Flow:
+
+```text
+Next.js
+    ↓
+Prisma
+    ↓
+Aurora PostgreSQL
+```
+
+---
+
+# Cache & Queue Layer
+
+## Redis
+
+Role:
+
+Caching + Job Infrastructure
+
+Used For:
+
+* Provider search cache
+* Medication cache
+* Rate limiting
+* Session cache
+* Background jobs
+
+---
+
+## BullMQ
+
+Role:
+
+Background Processing
+
+Queues:
+
+```text
+OCR Queue
+Translation Queue
+Extraction Queue
+Outcome Queue
+Provider Sync Queue
+```
+
+---
+
+# Object Storage
+
+## Amazon S3
+
+Role:
+
+Healthcare Document Storage
+
+Stores:
+
+* Prescriptions
+* Lab Reports
+* Vaccination Records
+* Insurance Documents
+* Audio Files
+* Passport Exports
+
+Never stored inside Aurora.
+
+Only metadata is stored in Aurora.
+
+---
+
+# Authentication
+
+## Auth.js (NextAuth v5)
+
+Role:
+
+Authentication & Session Management
+
+Providers:
+
+```text
+Google OAuth
+Apple OAuth (Future)
+Microsoft OAuth (Future)
+```
+
+---
+
+# AI Layer
+
+## Gemini
+
+Role:
+
+Healthcare Intelligence
+
+Used For:
+
+* OCR extraction
+* Medical memory extraction
+* Translation
+* Summaries
+* Context generation
+
+---
+
+## Groq
+
+Role:
+
+Reasoning Layer
+
+Used For:
+
+* Planning
+* Reflection
+* Agent execution
+* Decision support
+
+---
+
+## LangGraph
+
+Role:
+
+Agent Operating System
+
+Implements:
+
+```text
+Reason
+↓
+Plan
+↓
+Execute
+↓
+Reflect
+↓
+Replan
+```
+
+---
+
+# Observability
+
+## Sentry
+
+Role:
+
+Error Monitoring
+
+Tracks:
+
+* Frontend crashes
+* API failures
+* Agent failures
+* Queue failures
+
+---
+
+## PostHog
+
+Role:
+
+Product Analytics
+
+Tracks:
+
+* Onboarding completion
+* Passport creation
+* Journey completion
+* Provider selection
+* Outcome reporting
+
+---
+
+# Communication Layer
+
+## Resend
+
+Role:
+
+Transactional Email
+
+Used For:
+
+* Invitations
+* Passport sharing
+* Notifications
+* Verification emails
+
+---
+
+## Twilio
+
+Role:
+
+SMS / WhatsApp
+
+Used For:
+
+* Emergency alerts
+* Journey notifications
+* Organization messaging
+
+---
+
+# Voice Layer
+
+## Deepgram
+
+Role:
+
+Speech-to-Text
+
+Used For:
+
+Interpreter sessions
+
+---
+
+## ElevenLabs
+
+Role:
+
+Text-to-Speech
+
+Used For:
+
+Healthcare interpreter responses
+
+---
+
+# Mapping Layer
+
+## Geoapify
+
+Role:
+
+Provider Discovery
+
+Used For:
+
+* Hospitals
+* Clinics
+* Pharmacies
+
+---
+
+## OpenStreetMap
+
+Role:
+
+Provider Bootstrap Dataset
+
+---
+
+## MapLibre
+
+Role:
+
+Map Rendering
+
+Used For:
+
+* Provider maps
+* Journey maps
+* Emergency routing
+
+---
+
+# Security Layer
+
+## Ownership Assertions
+
+File:
+
+```text
+src/server/security/ownership.ts
+```
+
+Protects against:
+
+```text
+IDOR
+Broken Object Authorization
+Cross-user Data Access
+```
+
+---
+
+## RBAC
+
+File:
+
+```text
+src/server/security/permissions.ts
+```
+
+Roles:
+
+```text
+PATIENT
+DOCTOR
+PHARMACIST
+MEDICAL_ASSISTANT
+ORG_OPERATOR
+ORG_ADMIN
+SUPER_ADMIN
+```
+
+---
+
+## Audit System
+
+File:
+
+```text
+src/server/audit/audit.service.ts
+```
+
+Every critical action is logged.
+
+---
+
+# Database Philosophy
+
+Aurora PostgreSQL is not simply a database.
+
+It stores the Healthcare Navigation Graph.
+
+```text
+Traveler
+    ↓
+Journey
+    ↓
+Passport
+    ↓
+Memory
+    ↓
+Medication
+    ↓
+Provider
+    ↓
+Interpreter
+    ↓
+Outcome
+    ↓
+Healthcare Intelligence
+```
+
+As journeys accumulate, the platform becomes increasingly intelligent through its Provider Graph, Medication Graph, and Outcome Graph.
+
+
+# SWASTHYATRA PRODUCTION INFRASTRUCTURE
+
+## Cloud Provider
+
+AWS
+
+---
+
+## Core Architecture
+
+```text
+Users
+    ↓
+CloudFront CDN
+    ↓
+Vercel (Next.js Application)
+    ↓
+Server Actions / Route Handlers
+    ↓
+Prisma ORM
+    ↓
+Amazon Aurora PostgreSQL
+```
+
+---
+
+# Data Layer
+
+## Amazon Aurora PostgreSQL
+
+Role:
+
+Primary System of Record
+
+Stores:
+
+* Users
+* Passports
+* Medical Memory
+* Travel Journeys
+* Providers
+* Organizations
+* Outcomes
+* Audit Logs
+* Agent Execution History
+
+Why Aurora:
+
+* PostgreSQL compatibility
+* Multi-AZ availability
+* Automatic failover
+* Read replicas
+* Enterprise reliability
+* Managed backups
+* Point-in-time recovery
+
+---
+
+## PostGIS
+
+Role:
+
+Geospatial Intelligence
+
+Used For:
+
+* Nearby hospitals
+* Nearby pharmacies
+* Distance calculations
+* Radius search
+* Emergency routing
+
+Example:
+
+```sql
+Find providers within 5km
+Find nearest emergency room
+Find pharmacies open now
+```
+
+---
+
+## Prisma ORM
+
+Role:
+
+Database Access Layer
+
+Used For:
+
+* Type-safe queries
+* Migrations
+* Schema management
+* Generated types
+
+Flow:
+
+```text
+Next.js
+    ↓
+Prisma
+    ↓
+Aurora PostgreSQL
+```
+
+---
+
+# Cache & Queue Layer
+
+## Redis
+
+Role:
+
+Caching + Job Infrastructure
+
+Used For:
+
+* Provider search cache
+* Medication cache
+* Rate limiting
+* Session cache
+* Background jobs
+
+---
+
+## BullMQ
+
+Role:
+
+Background Processing
+
+Queues:
+
+```text
+OCR Queue
+Translation Queue
+Extraction Queue
+Outcome Queue
+Provider Sync Queue
+```
+
+---
+
+# Object Storage
+
+## Amazon S3
+
+Role:
+
+Healthcare Document Storage
+
+Stores:
+
+* Prescriptions
+* Lab Reports
+* Vaccination Records
+* Insurance Documents
+* Audio Files
+* Passport Exports
+
+Never stored inside Aurora.
+
+Only metadata is stored in Aurora.
+
+---
+
+# Authentication
+
+## Auth.js (NextAuth v5)
+
+Role:
+
+Authentication & Session Management
+
+Providers:
+
+```text
+Google OAuth
+Apple OAuth (Future)
+Microsoft OAuth (Future)
+```
+
+---
+
+# AI Layer
+
+## Gemini
+
+Role:
+
+Healthcare Intelligence
+
+Used For:
+
+* OCR extraction
+* Medical memory extraction
+* Translation
+* Summaries
+* Context generation
+
+---
+
+## Groq
+
+Role:
+
+Reasoning Layer
+
+Used For:
+
+* Planning
+* Reflection
+* Agent execution
+* Decision support
+
+---
+
+## LangGraph
+
+Role:
+
+Agent Operating System
+
+Implements:
+
+```text
+Reason
+↓
+Plan
+↓
+Execute
+↓
+Reflect
+↓
+Replan
+```
+
+---
+
+# Observability
+
+## Sentry
+
+Role:
+
+Error Monitoring
+
+Tracks:
+
+* Frontend crashes
+* API failures
+* Agent failures
+* Queue failures
+
+---
+
+## PostHog
+
+Role:
+
+Product Analytics
+
+Tracks:
+
+* Onboarding completion
+* Passport creation
+* Journey completion
+* Provider selection
+* Outcome reporting
+
+---
+
+# Communication Layer
+
+## Resend
+
+Role:
+
+Transactional Email
+
+Used For:
+
+* Invitations
+* Passport sharing
+* Notifications
+* Verification emails
+
+---
+
+## Twilio
+
+Role:
+
+SMS / WhatsApp
+
+Used For:
+
+* Emergency alerts
+* Journey notifications
+* Organization messaging
+
+---
+
+# Voice Layer
+
+## Deepgram
+
+Role:
+
+Speech-to-Text
+
+Used For:
+
+Interpreter sessions
+
+---
+
+## ElevenLabs
+
+Role:
+
+Text-to-Speech
+
+Used For:
+
+Healthcare interpreter responses
+
+---
+
+# Mapping Layer
+
+## Geoapify
+
+Role:
+
+Provider Discovery
+
+Used For:
+
+* Hospitals
+* Clinics
+* Pharmacies
+
+---
+
+## OpenStreetMap
+
+Role:
+
+Provider Bootstrap Dataset
+
+---
+
+## MapLibre
+
+Role:
+
+Map Rendering
+
+Used For:
+
+* Provider maps
+* Journey maps
+* Emergency routing
+
+---
+
+# Security Layer
+
+## Ownership Assertions
+
+File:
+
+```text
+src/server/security/ownership.ts
+```
+
+Protects against:
+
+```text
+IDOR
+Broken Object Authorization
+Cross-user Data Access
+```
+
+---
+
+## RBAC
+
+File:
+
+```text
+src/server/security/permissions.ts
+```
+
+Roles:
+
+```text
+PATIENT
+DOCTOR
+PHARMACIST
+MEDICAL_ASSISTANT
+ORG_OPERATOR
+ORG_ADMIN
+SUPER_ADMIN
+```
+
+---
+
+## Audit System
+
+File:
+
+```text
+src/server/audit/audit.service.ts
+```
+
+Every critical action is logged.
+
+---
+
+# Database Philosophy
+
+Aurora PostgreSQL is not simply a database.
+
+It stores the Healthcare Navigation Graph.
+
+```text
+Traveler
+    ↓
+Journey
+    ↓
+Passport
+    ↓
+Memory
+    ↓
+Medication
+    ↓
+Provider
+    ↓
+Interpreter
+    ↓
+Outcome
+    ↓
+Healthcare Intelligence
+```
+
+As journeys accumulate, the platform becomes increasingly intelligent through its Provider Graph, Medication Graph, and Outcome Graph.
+# SWASTHYATRA PRODUCTION INFRASTRUCTURE
+
+## Cloud Provider
+
+AWS
+
+---
+
+## Core Architecture
+
+```text
+Users
+    ↓
+CloudFront CDN
+    ↓
+Vercel (Next.js Application)
+    ↓
+Server Actions / Route Handlers
+    ↓
+Prisma ORM
+    ↓
+Amazon Aurora PostgreSQL
+```
+
+---
+
+# Data Layer
+
+## Amazon Aurora PostgreSQL
+
+Role:
+
+Primary System of Record
+
+Stores:
+
+* Users
+* Passports
+* Medical Memory
+* Travel Journeys
+* Providers
+* Organizations
+* Outcomes
+* Audit Logs
+* Agent Execution History
+
+Why Aurora:
+
+* PostgreSQL compatibility
+* Multi-AZ availability
+* Automatic failover
+* Read replicas
+* Enterprise reliability
+* Managed backups
+* Point-in-time recovery
+
+---
+
+## PostGIS
+
+Role:
+
+Geospatial Intelligence
+
+Used For:
+
+* Nearby hospitals
+* Nearby pharmacies
+* Distance calculations
+* Radius search
+* Emergency routing
+
+Example:
+
+```sql
+Find providers within 5km
+Find nearest emergency room
+Find pharmacies open now
+```
+
+---
+
+## Prisma ORM
+
+Role:
+
+Database Access Layer
+
+Used For:
+
+* Type-safe queries
+* Migrations
+* Schema management
+* Generated types
+
+Flow:
+
+```text
+Next.js
+    ↓
+Prisma
+    ↓
+Aurora PostgreSQL
+```
+
+---
+
+# Cache & Queue Layer
+
+## Redis
+
+Role:
+
+Caching + Job Infrastructure
+
+Used For:
+
+* Provider search cache
+* Medication cache
+* Rate limiting
+* Session cache
+* Background jobs
+
+---
+
+## BullMQ
+
+Role:
+
+Background Processing
+
+Queues:
+
+```text
+OCR Queue
+Translation Queue
+Extraction Queue
+Outcome Queue
+Provider Sync Queue
+```
+
+---
+
+# Object Storage
+
+## Amazon S3
+
+Role:
+
+Healthcare Document Storage
+
+Stores:
+
+* Prescriptions
+* Lab Reports
+* Vaccination Records
+* Insurance Documents
+* Audio Files
+* Passport Exports
+
+Never stored inside Aurora.
+
+Only metadata is stored in Aurora.
+
+---
+
+# Authentication
+
+## Auth.js (NextAuth v5)
+
+Role:
+
+Authentication & Session Management
+
+Providers:
+
+```text
+Google OAuth
+Apple OAuth (Future)
+Microsoft OAuth (Future)
+```
+
+---
+
+# AI Layer
+
+## Gemini
+
+Role:
+
+Healthcare Intelligence
+
+Used For:
+
+* OCR extraction
+* Medical memory extraction
+* Translation
+* Summaries
+* Context generation
+
+---
+
+## Groq
+
+Role:
+
+Reasoning Layer
+
+Used For:
+
+* Planning
+* Reflection
+* Agent execution
+* Decision support
+
+---
+
+## LangGraph
+
+Role:
+
+Agent Operating System
+
+Implements:
+
+```text
+Reason
+↓
+Plan
+↓
+Execute
+↓
+Reflect
+↓
+Replan
+```
+
+---
+
+# Observability
+
+## Sentry
+
+Role:
+
+Error Monitoring
+
+Tracks:
+
+* Frontend crashes
+* API failures
+* Agent failures
+* Queue failures
+
+---
+
+## PostHog
+
+Role:
+
+Product Analytics
+
+Tracks:
+
+* Onboarding completion
+* Passport creation
+* Journey completion
+* Provider selection
+* Outcome reporting
+
+---
+
+# Communication Layer
+
+## Resend
+
+Role:
+
+Transactional Email
+
+Used For:
+
+* Invitations
+* Passport sharing
+* Notifications
+* Verification emails
+
+---
+
+## Twilio
+
+Role:
+
+SMS / WhatsApp
+
+Used For:
+
+* Emergency alerts
+* Journey notifications
+* Organization messaging
+
+---
+
+# Voice Layer
+
+## Deepgram
+
+Role:
+
+Speech-to-Text
+
+Used For:
+
+Interpreter sessions
+
+---
+
+## ElevenLabs
+
+Role:
+
+Text-to-Speech
+
+Used For:
+
+Healthcare interpreter responses
+
+---
+
+# Mapping Layer
+
+## Geoapify
+
+Role:
+
+Provider Discovery
+
+Used For:
+
+* Hospitals
+* Clinics
+* Pharmacies
+
+---
+
+## OpenStreetMap
+
+Role:
+
+Provider Bootstrap Dataset
+
+---
+
+## MapLibre
+
+Role:
+
+Map Rendering
+
+Used For:
+
+* Provider maps
+* Journey maps
+* Emergency routing
+
+---
+
+# Security Layer
+
+## Ownership Assertions
+
+File:
+
+```text
+src/server/security/ownership.ts
+```
+
+Protects against:
+
+```text
+IDOR
+Broken Object Authorization
+Cross-user Data Access
+```
+
+---
+
+## RBAC
+
+File:
+
+```text
+src/server/security/permissions.ts
+```
+
+Roles:
+
+```text
+PATIENT
+DOCTOR
+PHARMACIST
+MEDICAL_ASSISTANT
+ORG_OPERATOR
+ORG_ADMIN
+SUPER_ADMIN
+```
+
+---
+
+## Audit System
+
+File:
+
+```text
+src/server/audit/audit.service.ts
+```
+
+Every critical action is logged.
+
+---
+
+# Database Philosophy
+
+Aurora PostgreSQL is not simply a database.
+
+It stores the Healthcare Navigation Graph.
+
+```text
+Traveler
+    ↓
+Journey
+    ↓
+Passport
+    ↓
+Memory
+    ↓
+Medication
+    ↓
+Provider
+    ↓
+Interpreter
+    ↓
+Outcome
+    ↓
+Healthcare Intelligence
+```
+
+As journeys accumulate, the platform becomes increasingly intelligent through its Provider Graph, Medication Graph, and Outcome Graph.
+
+
+Primary Database:
+Amazon Aurora PostgreSQL
+
+Extensions:
+PostGIS
+
+ORM:
+Prisma
+
+Cache:
+Redis
+
+Storage:
+Amazon S3
+
+Queue System:
+BullMQ
+
+Auth:
+Auth.js
+
+Frontend & Backend:
+Next.js 16
+
+Hosting:
+Vercel
+
+Observability:
+Sentry + PostHog

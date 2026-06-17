@@ -1,0 +1,1593 @@
+# SWASTHYATRA
+
+## Founder Blueprint (Pre-Loss Architecture)
+
+### The Complete System We Agreed To Build
+
+---
+
+# Executive Summary
+
+SwasthYatra is a Healthcare Navigation Operating System.
+
+The mission is not:
+
+* Finding doctors
+* Booking appointments
+* Generic AI healthcare chat
+
+The mission is:
+
+Help travelers navigate healthcare anywhere in the world.
+
+The user should be able to:
+
+* Understand what to do
+* Find healthcare
+* Communicate across languages
+* Share health history
+* Get medication equivalents
+* Access providers
+* Continue care
+* Improve outcomes
+
+through a single operating system.
+
+---
+
+# Core Philosophy
+
+Most healthcare products are:
+
+Doctor-Centric
+
+or
+
+Hospital-Centric
+
+SwasthYatra is:
+
+Journey-Centric
+
+Everything revolves around:
+
+TravelHealthSession
+
+Not User.
+
+Not Chat.
+
+Not Provider.
+
+TravelHealthSession.
+
+---
+
+# Core Entity
+
+model TravelHealthSession
+
+Contains:
+
+* User
+* Current Country
+* Current Location
+* Language
+* Symptoms
+* Severity
+* Medications
+* Allergies
+* Provider Context
+* Interpreter Context
+* Outcomes
+
+Every subsystem reads/writes this object.
+
+---
+
+# Final Architecture
+
+SwasthYatra
+
+├── Agent OS
+├── Healthcare Graph
+├── Medication Intelligence
+├── Provider Discovery
+├── Medical Interpreter
+├── Health Passport
+├── Medical Memory
+├── Outcome Intelligence
+└── Organization Layer
+
+---
+
+# Monorepo Structure
+
+root/
+
+├── frontend/
+├── backend/
+├── packages/
+│
+├── packages/database
+├── packages/types
+├── packages/shared
+├── packages/healthcare-graph
+├── packages/agent-core
+│
+└── docs/
+
+---
+
+# Frontend Architecture
+
+frontend/src
+
+├── app/
+│
+├── landing/
+├── onboarding/
+├── dashboard/
+│
+├── passport/
+├── vault/
+├── memory/
+├── journeys/
+├── outcomes/
+├── interpreter/
+├── graph/
+├── providers/
+├── organizations/
+├── settings/
+├── agent/
+│
+└── demo/
+
+---
+
+# Dashboard Layout
+
+Dashboard
+
+├── Health Passport
+├── Vault
+├── Medical Memory
+├── Healthcare Journeys
+├── Interpreter
+├── Outcomes
+├── Organizations
+├── Agent Workspace
+
+---
+
+# Landing Page
+
+Purpose:
+
+Explain:
+
+Travel Healthcare Problems
+
+Show:
+
+* Language barriers
+* Medication confusion
+* Finding care abroad
+
+CTA:
+
+Start Journey
+
+---
+
+# Onboarding
+
+Must happen before dashboard.
+
+Flow:
+
+Google Auth
+↓
+Create Profile
+↓
+Medical Basics
+↓
+Emergency Contact
+↓
+Insurance
+↓
+Dashboard
+
+Never inside dashboard.
+
+---
+
+# Health Vault
+
+Purpose:
+
+Document Storage
+
+Stores:
+
+* Reports
+* Prescriptions
+* Vaccinations
+* Insurance
+
+Pipeline:
+
+Upload
+↓
+OCR
+↓
+Translation
+↓
+Extraction
+↓
+Review Queue
+
+---
+
+# Medical Memory
+
+Persistent health knowledge.
+
+Stores:
+
+Conditions
+
+Allergies
+
+Medications
+
+Vaccinations
+
+Insurance
+
+Provider History
+
+Emergency Data
+
+---
+
+# Memory Candidate System
+
+Documents never write memory directly.
+
+Flow:
+
+Document
+↓
+Extraction
+↓
+MedicalMemoryCandidate
+↓
+Review
+↓
+Approval
+↓
+MedicalMemory
+
+This became a major security boundary.
+
+---
+
+# Health Passport
+
+Portable healthcare profile.
+
+Contains:
+
+Conditions
+
+Allergies
+
+Medications
+
+Vaccinations
+
+Insurance
+
+Emergency Contacts
+
+Provider Notes
+
+---
+
+# Passport Sharing
+
+Patient
+↓
+Generate Share Link
+↓
+Provider Opens
+↓
+Audit Log
+↓
+Provider Context
+
+Never public.
+
+Every access logged.
+
+---
+
+# Medical Interpreter
+
+One of the biggest moats.
+
+Not:
+
+Translator
+
+Instead:
+
+Context-Aware Medical Interpreter
+
+Reads:
+
+TravelHealthSession
+
+Knows:
+
+* Allergies
+* Medications
+* Conditions
+* Current provider
+
+Pipeline:
+
+Patient Audio
+↓
+STT
+↓
+Translate
+↓
+Inject Context
+↓
+TTS
+↓
+Provider
+
+And reverse.
+
+---
+
+# Medication Intelligence
+
+Not RAG.
+
+Deterministic.
+
+Package:
+
+healthcare-graph
+
+Tables:
+
+Medication
+
+ActiveIngredient
+
+MedicationEquivalent
+
+CountryMedication
+
+OTCStatus
+
+Example:
+
+Paracetamol
+
+India → Crocin
+
+US → Tylenol
+
+Japan → Bufferin
+
+---
+
+# Provider Discovery
+
+Provider Search
+
+Sources:
+
+Google Places
+
+OpenStreetMap
+
+Government Registries
+
+Stores:
+
+Hospital
+
+Clinic
+
+Pharmacy
+
+Telemedicine
+
+Attributes:
+
+Language
+
+Specialty
+
+Hours
+
+Insurance
+
+---
+
+# Future Provider Layer
+
+ProviderPresence
+
+ProviderContactChannel
+
+ProviderAvailability
+
+ProviderDispatcher
+
+ProviderRouting
+
+Future:
+
+WhatsApp Agent
+
+Voice Agent
+
+---
+
+# Healthcare Graph
+
+The actual moat.
+
+Graph:
+
+Traveler
+↔ Symptoms
+↔ Medication
+↔ Provider
+↔ Outcome
+↔ Language
+↔ Country
+
+Every interaction enriches graph.
+
+---
+
+# Outcome Intelligence
+
+Captures:
+
+Treatment
+
+Medication
+
+Provider
+
+Country
+
+Result
+
+Recovery
+
+Follow-up
+
+Creates:
+
+OutcomeInsight
+
+MedicationOutcome
+
+ProviderOutcome
+
+---
+
+# Agent OS
+
+Inspired more by Cursor than ChatGPT.
+
+Not:
+
+Prompt
+↓
+Answer
+
+Instead:
+
+Goal
+↓
+Reason
+↓
+Plan
+↓
+Execute
+↓
+Reflect
+↓
+Replan
+
+---
+
+# Agent Architecture
+
+packages/agent-core
+
+├── reasoning.ts
+├── planner.ts
+├── executor.ts
+├── reflection.ts
+├── replanner.ts
+├── timeline.ts
+├── memory.ts
+├── goals.ts
+├── approvals.ts
+└── confidence.ts
+
+---
+
+# Agent Personas
+
+Patient Companion
+
+Doctor Copilot
+
+Pharmacist Copilot
+
+Medical Assistant
+
+Organization Operator
+
+Organization Admin
+
+---
+
+# Agent Tools
+
+Around 20 tools.
+
+Examples:
+
+queryPassport
+
+queryMemory
+
+queryVault
+
+queryJourney
+
+queryOutcome
+
+translateDocument
+
+generateSummary
+
+searchMedication
+
+sharePassport
+
+assignTask
+
+---
+
+# Approval Gates
+
+High-risk actions:
+
+Share
+
+Write
+
+Notify
+
+Require approval.
+
+---
+
+# Confidence Engine
+
+Factors:
+
+Source Reliability
+
+Text Quality
+
+Completeness
+
+Consistency
+
+Outputs:
+
+Confidence
+
+Risk
+
+Human Review Recommendation
+
+---
+
+# Organizations
+
+Roles:
+
+PATIENT
+
+DOCTOR
+
+PHARMACIST
+
+MEDICAL_ASSISTANT
+
+ORGANIZATION_OPERATOR
+
+ORGANIZATION_ADMIN
+
+---
+
+# Organization Dashboard
+
+Members
+
+Assignments
+
+Analytics
+
+Tasks
+
+Reviews
+
+Approvals
+
+---
+
+# Authentication
+
+NextAuth
+
+Google OAuth
+
+Session Persistence
+
+User should remain logged in.
+
+Logout only when explicitly chosen.
+
+---
+
+# Shared Database Package
+
+packages/database
+
+Single Prisma schema.
+
+Single Prisma client.
+
+Used by:
+
+Frontend
+
+Backend
+
+Avoid schema drift.
+
+---
+
+# AI Layer
+
+Gemini
+
+Used For:
+
+Clinical Reasoning
+
+Memory Extraction
+
+Outcome Insights
+
+Provider Summaries
+
+---
+
+Groq
+
+Used For:
+
+Reasoning
+
+Planning
+
+Reflection
+
+Replanning
+
+Goal Detection
+
+---
+
+# Speech Layer
+
+Deepgram
+
+Speech-to-Text
+
+ElevenLabs
+
+Text-to-Speech
+
+---
+
+# Security Layer
+
+Audit Logs
+
+IDOR Protection
+
+Ownership Validation
+
+Provenance Tracking
+
+Verification Metadata
+
+Approval Workflow
+
+---
+
+# Demo Dataset
+
+Maria Rodriguez
+
+Patient
+
+Mexico
+
+Diabetes
+
+Hypertension
+
+Japan Trip
+
+---
+
+Dr Sarah Chen
+
+Travel Medicine
+
+Doctor
+
+---
+
+Hiro Tanaka
+
+Tokyo Pharmacist
+
+---
+
+# Demo Story
+
+Upload Report
+↓
+Translate
+↓
+Extract
+↓
+Review
+↓
+Memory
+↓
+Passport
+↓
+Trip Planning
+↓
+Provider Summary
+↓
+Outcome Intelligence
+
+---
+
+# Future Roadmap
+
+Sprint 11
+
+Provider Network
+
+Provider Availability
+
+Provider Routing
+
+Provider Dispatcher
+
+---
+
+Sprint 12
+
+WhatsApp Agent
+
+SMS Agent
+
+Provider Outreach
+
+---
+
+Sprint 13
+
+Voice Healthcare Agent
+
+Phone-Based Navigation
+
+---
+
+Sprint 14
+
+Healthcare Navigation Graph
+
+Global Outcome Intelligence
+
+---
+
+Final Vision
+
+A traveler in any country should be able to say:
+
+"I need help."
+
+And SwasthYatra should:
+
+Understand context
+↓
+Determine severity
+↓
+Find medication
+↓
+Find provider
+↓
+Translate conversation
+↓
+Track outcome
+↓
+Improve future recommendations
+
+without requiring the traveler to understand the local healthcare system.
+
+This is the system we agreed to build.
+The tech stack eventually became much larger than what you started with. If I reconstruct the final intended SwasthYatra/CareCompass stack, it looked like this:
+Frontend
+Core
+Next.js 15/16React 19TypeScriptApp Router
+UI
+TailwindCSSshadcn/uiRadix UILucide Icons
+State
+React HooksServer ActionsTanStack Query (planned)
+Auth
+NextAuth/Auth.jsGoogle OAuthJWT Sessions
+Forms
+React Hook FormZod
+Data Visualization
+Recharts
+Used for:
+Outcome IntelligenceMedication AnalyticsProvider AnalyticsHealthcare Graph
+
+Backend
+Core
+Node.jsExpressTypeScripttsx
+Structure:
+backend/app/src
+Modules:
+agent/passport/memory/outcomes/interpreter/providers/organizations/journeys/vault/
+
+Database
+Final Architecture
+Aurora PostgreSQLPrisma ORM
+Shared through:
+packages/database
+
+Prisma
+Single schema:
+packages/database/prisma/schema.prisma
+Models included:
+UserAccountSessionTravelHealthSessionMedicalMemoryMedicalMemoryCandidateHealthPassportVaultDocumentOutcomeInsightMedicationOutcomeProviderOutcomeAgentTaskAgentRunEvaluationOrganizationOrganizationMemberInterpreterSessionConversationMessageProviderWorkspace
+50+ models eventually.
+
+Shared Monorepo
+root│├── frontend├── backend│├── packages/database├── packages/types├── packages/shared├── packages/agent-core├── packages/healthcare-graph
+Workspaces:
+npm workspaces
+
+AI Stack
+Gemini
+Used for:
+Clinical SummariesProvider SummariesMemory ExtractionDocument UnderstandingOutcome IntelligenceMedical Reasoning
+Models:
+Gemini 2.5 FlashGemini 2.5 Pro (planned)
+
+Groq
+Used for:
+Agent PlanningReasoningReflectionReplanningGoal Detection
+Models discussed:
+Llama 4DeepSeek R1Qwen
+
+Agent Framework
+Originally:
+LangGraph
+inspired architecture.
+Core files:
+reasoning.tsplanner.tsexecutor.tsreflection.tsreplanner.tstimeline.ts
+Agent behaves closer to:
+CursorClaude CodeDevin
+than a chatbot.
+
+Healthcare Intelligence Layer
+Medication Graph
+Planned package:
+packages/healthcare-graph
+Tables:
+MedicationActiveIngredientMedicationEquivalentCountryMedication
+Purpose:
+Deterministic medication lookup
+Not RAG.
+
+Document Intelligence
+Pipeline:
+Upload↓OCR↓Translate↓Extract↓Review↓Medical Memory
+Tools:
+GeminiDeepgram (for transcripts)
+Potential future:
+DoclingLlamaParseAzure OCR
+
+Voice & Interpreter
+Deepgram
+Used for:
+Speech-to-Text
+Interpreter input:
+Patient AudioProvider Audio
+
+ElevenLabs
+Used for:
+Text-to-SpeechVoice Synthesis
+Interpreter output:
+Translated Voice
+
+Security
+Auth
+NextAuthGoogle OAuthJWT
+
+Audit
+Audit LogsActivity TrackingApproval Gates
+
+Provenance
+Medical Memory stores:
+sourceTypesourceDocumentIdsourceSessionIdconfidenceverifiedAtverifiedBy
+
+Cloud
+AWS
+Primary provider.
+Services:
+Aurora PostgreSQLS3 (planned)CloudFront (future)
+
+Storage
+Current:
+AuroraFilesystem
+Planned:
+AWS S3
+for:
+Vault DocumentsAudio FilesPassport Exports
+
+Search & Discovery
+Current:
+Prisma Queries
+Future:
+OpenSearchpgvector
+for:
+Semantic searchProvider searchDocument search
+
+Provider Discovery
+Sources discussed:
+OpenStreetMapGeoapifyGoogle Places APIGovernment Registries
+
+Maps
+GeoapifyOpenStreetMap
+Used for:
+Nearby providersHospitalsPharmacies
+
+Demo Infrastructure
+Seeded users:
+Maria RodriguezDr Sarah ChenHiro TanakaAdmin
+Commands:
+npm run seed:demonpm run smoke-testnpm run test:agent
+
+Testing
+Smoke Tests
+14+ endpoint checks
+
+Agent Benchmarks
+Scenarios:
+Japan Travel PrepDoctor SummaryPrescription TranslationPassport SharingMedication EquivalentsInterpreter Memory
+
+Dev Tools
+IDEs
+CursorVS CodeAntigravityOpenCodeClaude Code
+
+Build
+npm run buildnpm run dev
+
+Future Sprint 11+
+Provider Network
+ProviderAvailabilityProviderPresenceProviderContactChannelProviderDispatcherProviderRouting
+
+Communication
+WhatsApp Business APITwilioSMSEmailVoice Calls
+
+Final Stack Summary
+If someone asked:
+
+"What is SwasthYatra built with?"
+
+The answer would be:
+Frontend:Next.js + React + TypeScript + Tailwind + shadcn/uiBackend:Node.js + Express + TypeScriptDatabase:Aurora PostgreSQL + PrismaAI:Gemini + GroqSpeech:Deepgram + ElevenLabsAuth:NextAuth + Google OAuthMaps:Geoapify + OpenStreetMapArchitecture:Monorepo + Shared Prisma Package + Agent OSCore Systems:Health VaultMedical MemoryHealth PassportMedical InterpreterOutcome IntelligenceOrganization LayerHealthcare Navigation GraphAgent Operating System
+That was the final intended SwasthYatra/CareCompass technical architecture before moving into the Provider Network / WhatsApp Agent era (Sprint 11+).  SWASTHYATRA
+Founder Blueprint
+The Complete Vision, Architecture, Moat Strategy & Execution Roadmap
+1. Company Mission
+
+SwasthYatra is building the world's first:
+
+Global Healthcare Navigation Layer
+
+We are not building:
+
+❌ AI Doctor
+
+❌ Doctor Marketplace
+
+❌ Appointment Booking App
+
+❌ Telemedicine Platform
+
+❌ Medical Tourism Portal
+
+We are building:
+
+✅ Healthcare Navigation Infrastructure
+
+for anyone who is outside their normal healthcare network.
+
+2. Origin Story
+
+The company began from the Razorpay Rize problem statement:
+
+Travelers who fall ill in unfamiliar cities don't know which providers to visit, whether doctors speak their language, or what treatment costs to expect.
+
+Initially this appeared to be:
+
+Doctor Discovery Problem
+
+However extensive Reddit research across:
+
+Backpackers
+Digital Nomads
+Long-Term Travelers
+Solo Travelers
+Medical Tourists
+
+revealed something surprising.
+
+Travelers rarely begin with doctors.
+
+Their actual workflow is:
+
+Symptoms
+↓
+Self Assessment
+(ChatGPT / Google / Prior Experience)
+↓
+Pharmacy
+↓
+Translation Tool
+↓
+Medication
+↓
+Clinic / Hospital if worse
+
+This insight changed the company.
+
+3. The Fundamental Discovery
+
+Travelers do not have a diagnosis problem.
+
+They have a navigation problem.
+
+They are not asking:
+
+"What disease do I have?"
+
+They are asking:
+
+"What should I do next?"
+
+This became the foundation of SwasthYatra.
+
+4. Real User Pain Points
+Pain 1 — Medication Navigation
+
+Most common issue.
+
+Travelers know:
+
+Cold
+Fever
+Diarrhea
+Food Poisoning
+
+But they do not know:
+
+Local brands
+Active ingredients
+Prescription rules
+OTC availability
+
+Example:
+
+Crocin
+Tylenol
+Panadol
+Calpol
+Bufferin
+
+All map to similar active ingredients.
+
+Travelers struggle to navigate this.
+
+Pain 2 — Language Barrier
+
+Current solution:
+
+Google Translate
+
+Problems:
+
+Medical terminology
+Allergies
+Medication names
+Prescription instructions
+
+are often lost.
+
+Pain 3 — Escalation Uncertainty
+
+Users don't need diagnosis.
+
+They need:
+
+Rest?
+Pharmacy?
+Clinic?
+Hospital?
+Emergency?
+
+The uncertainty is the pain.
+
+Pain 4 — Trust
+
+Travelers don't know:
+
+Which pharmacy
+Which doctor
+Which hospital
+Which telemedicine service
+
+to trust.
+
+Trust matters more than discovery.
+
+Pain 5 — Medication Continuity
+
+Repeatedly observed.
+
+Examples:
+
+Lost medication
+Ran out of medication
+Need refill
+Country restrictions
+Equivalent medicine abroad
+5. Reframed Vision
+
+Instead of:
+
+AI Doctor
+
+We are building:
+
+Healthcare Navigation OS
+
+A traveler anywhere in the world should be able to say:
+
+"I need help."
+
+and receive:
+
+Understand Symptoms
+↓
+Determine Severity
+↓
+Find Medication
+↓
+Find Provider
+↓
+Communicate
+↓
+Track Outcome
+
+within minutes.
+
+6. The Unified Moat
+
+Originally:
+
+Interpreter
+Medication Intelligence
+Provider Discovery
+Navigation Engine
+
+looked like separate products.
+
+They are not.
+
+They are interfaces into one asset:
+
+Global Healthcare Navigation Graph
+Graph Structure
+Traveler
+↔ Symptoms
+↔ Language
+↔ Medication
+↔ Provider
+↔ Country
+↔ Outcome
+
+Every interaction enriches this graph.
+
+7. The Four Moats
+Moat 1 — Medical Interpreter
+
+Not translation.
+
+Healthcare communication.
+
+Current World
+Traveler
+↓
+Google Translate
+↓
+Doctor
+SwasthYatra
+Traveler
+↓
+Medical Context
+↓
+Interpreter
+↓
+Provider
+
+Context includes:
+
+Symptoms
+Allergies
+Medications
+History
+Severity
+Location
+Moat 2 — Medication Intelligence Graph
+
+Deterministic.
+
+Not RAG.
+
+Structure
+Active Ingredient
+↔ Country
+↔ Brand
+↔ OTC Status
+↔ Availability
+
+Example:
+
+Paracetamol
+
+India
+→ Crocin
+
+USA
+→ Tylenol
+
+Japan
+→ Bufferin
+
+Mexico
+→ Tempra
+Moat 3 — Provider Graph
+
+Provider inventory.
+
+Bootstrap using:
+
+OpenStreetMap
+Google Places
+Government Registries
+
+Store:
+
+Hospitals
+Clinics
+Pharmacies
+Telemedicine
+
+Attributes:
+
+Languages
+Hours
+Insurance
+Tourist Friendliness
+Cost Signals
+Moat 4 — Outcome Graph
+
+Most important moat.
+
+Capture:
+
+Symptoms
+Medication
+Provider
+Language
+Outcome
+Country
+
+Example:
+
+Traveler
+Bangkok
+Food Poisoning
+
+Visited:
+Pharmacy X
+
+Bought:
+Medication Y
+
+Outcome:
+Recovered in 24h
+
+This becomes proprietary.
+
+8. Core Architectural Principle
+
+Everything revolves around:
+
+TravelHealthSession
+
+Not:
+
+❌ Chat
+
+❌ User
+
+❌ Provider
+
+But:
+
+✅ TravelHealthSession
+
+TravelHealthSession
+TravelHealthSession
+
+id
+user_id
+
+country
+city
+
+location
+
+symptoms
+duration
+
+allergies
+medications
+
+severity_level
+
+provider_options
+
+interpreter_context
+
+local_medication_recommendations
+
+outcome_status
+
+Every subsystem reads and writes this entity.
+
+9. Agent Architecture
+
+The system behaves more like Cursor than ChatGPT.
+
+Not:
+
+Prompt
+↓
+Answer
+
+Instead:
+
+Goal
+↓
+Reason
+↓
+Plan
+↓
+Execute
+↓
+Reflect
+↓
+Replan
+Core Components
+reasoning.ts
+planner.ts
+executor.ts
+reflection.ts
+replanner.ts
+timeline.ts
+memory.ts
+goals.ts
+approvals.ts
+confidence.ts
+10. Navigation Workflow
+START
+↓
+INTAKE
+↓
+TRIAGE_CONTEXT
+↓
+SEVERITY
+↓
+ROUTER
+
+Branches:
+
+SELF_CARE
+PHARMACY
+CLINIC
+HOSPITAL
+EMERGENCY
+Pharmacy Flow
+Medication Lookup
+↓
+Provider Search
+↓
+Interpreter
+↓
+Outcome Capture
+Clinic Flow
+Provider Search
+↓
+Interpreter
+↓
+Outcome Capture
+Emergency Flow
+Emergency Action
+↓
+End
+11. Final Tech Stack
+Frontend
+Next.js 16
+React 19
+TypeScript
+TailwindCSS
+shadcn/ui
+MapLibre
+Zustand
+React Hook Form
+Zod
+Backend
+FastAPI
+Python 3.12
+LangGraph
+SQLAlchemy
+Alembic
+Celery
+Redis
+Database
+PostgreSQL
+PostGIS
+pgvector
+AI
+GLM 5.1
+Gemini
+Groq
+
+Future:
+
+Claude
+GPT
+Qwen
+DeepSeek
+
+behind AI Gateway.
+
+Voice
+Deepgram
+ElevenLabs
+LiveKit
+12. MVP Roadmap
+Phase 0
+
+Build:
+
+TravelHealthSession
+Navigation Agent
+Provider Discovery
+Medication Lookup
+Context-Aware Interpreter
+Outcome Capture
+
+Nothing else.
+
+Phase 1
+
+Medication Graph
+
+Top:
+
+20 Countries
+200 Active Ingredients
+Phase 2
+
+Provider Graph
+
+OSM + Google Places bootstrap.
+
+Phase 3
+
+Outcome Graph
+
+Capture:
+
+Symptom
+Medication
+Provider
+Language
+Outcome
+13. Long-Term Vision
+
+The end state is not a healthcare app.
+
+The end state is:
+
+Global Healthcare Navigation Infrastructure
+
+A traveler should be able to land anywhere in the world and say:
+
+"I need help."
+
+SwasthYatra should:
+
+Understand Context
+↓
+Determine Severity
+↓
+Find Medication
+↓
+Find Trusted Care
+↓
+Translate Conversation
+↓
+Track Outcome
+↓
+Improve Future Recommendations
+
+without requiring the traveler to understand the local healthcare system.
+
+That is the complete founder blueprint and the clearest articulation of everything we discussed, researched, validated, architected, and planned before the repository loss.

@@ -1,0 +1,45 @@
+{
+  "name": "swasthyatra",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --name init",
+    "seed:demo": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.4.0",
+    "@prisma/client": "^5.15.0",
+    "@radix-ui/react-dialog": "^1.1.17",
+    "@radix-ui/react-slot": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^0.408.0",
+    "next": "^15.0.0",
+    "next-auth": "^5.0.0-beta.20",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.4.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.19",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.9",
+    "postcss": "^8.4.39",
+    "prisma": "^5.15.0",
+    "tailwindcss": "^3.4.4",
+    "tsx": "^4.11.0",
+    "typescript": "^5.4.0"
+  }
+}

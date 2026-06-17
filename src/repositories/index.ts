@@ -1,0 +1,6 @@
+export { userRepository } from "./user.repository"
+export { journeyRepository } from "./journey.repository"
+export { passportRepository } from "./passport.repository"
+export { memoryRepository } from "./memory.repository"
+export { providerRepository } from "./provider.repository"
+export { documentRepository } from "./document.repository"

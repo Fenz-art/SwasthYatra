@@ -1,0 +1,1622 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  PATIENT
+  DOCTOR
+  PHARMACIST
+  MEDICAL_ASSISTANT
+  ORG_OPERATOR
+  ORG_ADMIN
+  SUPER_ADMIN
+}
+
+enum ProviderType {
+  HOSPITAL
+  CLINIC
+  PHARMACY
+  TELEMEDICINE
+  LABORATORY
+  DIAGNOSTIC_CENTER
+}
+
+enum ProviderVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  PENDING_REVIEW
+  FLAGGED
+}
+
+enum SeverityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum JourneyStatus {
+  ACTIVE
+  RESOLVED
+  CANCELLED
+}
+
+enum OutcomeResult {
+  RECOVERED
+  IMPROVED
+  UNCHANGED
+  WORSENED
+  REQUIRED_HOSPITALIZATION
+  REFERRED_SPECIALIST
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MERGED
+}
+
+enum ReviewResourceType {
+  MEDICAL_MEMORY_CANDIDATE
+  PROVIDER_VERIFICATION
+  OUTCOME_VERIFICATION
+  DOCUMENT_CLASSIFICATION
+}
+
+enum AuditEventType {
+  USER_SIGNED_IN
+  USER_SIGNED_UP
+  USER_DELETED
+  PASSPORT_CREATED
+  PASSPORT_UPDATED
+  PASSPORT_SHARED
+  PASSPORT_VIEWED
+  PASSPORT_EXPORTED
+  PASSPORT_REVOKED
+  MEMORY_CANDIDATE_CREATED
+  MEMORY_APPROVED
+  MEMORY_REJECTED
+  MEMORY_MERGED
+  MEMORY_DELETED
+  DOCUMENT_UPLOADED
+  DOCUMENT_VIEWED
+  DOCUMENT_DELETED
+  DOCUMENT_PROCESSED
+  DOCUMENT_EXTRACTED
+  JOURNEY_CREATED
+  JOURNEY_UPDATED
+  JOURNEY_COMPLETED
+  JOURNEY_CANCELLED
+  SEVERITY_ASSESSED
+  PROVIDER_ROUTED
+  PROVIDER_SEARCHED
+  PROVIDER_VIEWED
+  PROVIDER_CONTACTED
+  PROVIDER_REVIEWED
+  INTERPRETER_STARTED
+  INTERPRETER_COMPLETED
+  ORG_CREATED
+  ORG_MEMBER_ADDED
+  ORG_MEMBER_REMOVED
+  ORG_INVITATION_SENT
+  ORG_INVITATION_ACCEPTED
+  ORG_ROLE_CHANGED
+  AGENT_TASK_STARTED
+  AGENT_TASK_COMPLETED
+  AGENT_TOOL_EXECUTED
+  AGENT_APPROVAL_REQUESTED
+  AGENT_APPROVAL_GRANTED
+  AGENT_APPROVAL_DENIED
+  ADMIN_ACTION
+  SETTINGS_CHANGED
+  FEATURE_FLAG_CHANGED
+  OWNERSHIP_VIOLATION
+  UNAUTHORIZED_ACCESS
+  RATE_LIMIT_HIT
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  PUSH
+  WHATSAPP
+  SMS
+}
+
+enum AgentTaskStatus {
+  PLANNING
+  AWAITING_APPROVAL
+  EXECUTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AgentNodeType {
+  INTAKE
+  SEVERITY
+  ROUTER
+  MEDICATION_LOOKUP
+  PROVIDER_SEARCH
+  INTERPRETER
+  OUTCOME_CAPTURE
+  REFLECTION
+  HUMAN_APPROVAL
+}
+
+enum RegulatoryCategory {
+  OTC
+  PHARMACIST_ONLY
+  PRESCRIPTION
+  CONTROLLED
+  NARCOTIC
+}
+
+// ==================== AUTH MODELS ====================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  role          Role      @default(PATIENT)
+
+  onboardingCompleted Boolean @default(false)
+  phoneNumber         String?
+  bloodType           String?
+  emergencyContact    Json?
+  insuranceInfo       Json?
+
+  accounts     Account[]
+  sessions     Session[]
+
+  travelHealthSessions TravelHealthSession[]
+  memory        MedicalMemory[]
+  passports     HealthPassport[]
+  vaultDocuments VaultDocument[]
+  orgMemberships OrganizationMember[]
+  agentTasks    AgentTask[]
+  notifications Notification[]
+  notificationPreference NotificationPreference?
+  auditLogs     AuditLog[]
+  reviews       ProviderReview[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String  @id @default(uuid())
+  sessionToken String  @unique
+  userId       String
+  expires      DateTime
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ==================== CORE: TRAVEL HEALTH SESSION ====================
+
+model TravelHealthSession {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  country       String
+  city          String
+  location      Json?
+  language      String
+
+  symptoms      Json?
+  duration      String?
+  allergies     Json?
+  medications   Json?
+
+  severityLevel String?
+  status        JourneyStatus @default(ACTIVE)
+
+  providerOptions           Json?
+  interpreterContext        Json?
+  localMedicationRecommendations Json?
+
+  outcomeId     String?
+  outcome       OutcomeInsight?
+
+  interpreterSessions InterpreterSession[]
+  timeline            JourneyTimelineEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([country])
+  @@index([status])
+}
+
+model JourneyTimelineEvent {
+  id              String   @id @default(uuid())
+  sessionId       String
+  session         TravelHealthSession @relation(fields: [sessionId], references: [id])
+  eventType       String
+  data            Json
+  createdAt       DateTime @default(now())
+}
+
+// ==================== HEALTH PASSPORT ====================
+
+model HealthPassport {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+
+  data        Json
+  shareToken  String?  @unique
+  expiresAt   DateTime?
+
+  shareLinks  PassportShareLink[]
+  auditLogs   PassportAuditLog[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PassportShareLink {
+  id               String   @id @default(uuid())
+  passportId       String
+  passport         HealthPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+  token            String   @unique
+  expiresAt        DateTime
+  revoked          Boolean  @default(false)
+  accessLogs       PassportAccessLog[]
+  createdAt        DateTime @default(now())
+
+  @@index([token])
+}
+
+model PassportAccessLog {
+  id              String   @id @default(uuid())
+  shareLinkId     String
+  shareLink       PassportShareLink @relation(fields: [shareLinkId], references: [id])
+  accessorId      String?
+  accessorIp      String?
+  userAgent       String?
+  viewedAt        DateTime @default(now())
+}
+
+model PassportAuditLog {
+  id          String   @id @default(uuid())
+  passportId  String
+  passport    HealthPassport @relation(fields: [passportId], references: [id])
+  accessorId  String?
+  accessorIp  String?
+  action      String
+  createdAt   DateTime @default(now())
+}
+
+// ==================== VAULT & DOCUMENTS ====================
+
+model VaultDocument {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  type          String
+  fileUrl       String
+  fileName      String
+  mimeType      String
+  fileSize      Int      @default(0)
+  storageKey    String?
+
+  status        String   @default("UPLOADED")
+  ocrText       String?
+  translatedText String?
+  ocrCompleted  Boolean  @default(false)
+  translated    Boolean  @default(false)
+  extracted     Boolean  @default(false)
+
+  version       Int      @default(1)
+  auditLogs     VaultAuditLog[]
+  candidates    MedicalMemoryCandidate[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model VaultAuditLog {
+  id           String   @id @default(uuid())
+  documentId   String
+  document     VaultDocument @relation(fields: [documentId], references: [id])
+  actorId      String?
+  action       String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+}
+
+// ==================== MEDICAL MEMORY ====================
+
+model MedicalMemory {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  type        String
+  data        Json
+  confidence  Float?
+
+  sourceType       String?
+  sourceDocumentId String?
+  sourceSessionId  String?
+  verifiedAt       DateTime?
+  verifiedBy       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+model MedicalMemoryCandidate {
+  id          String   @id @default(uuid())
+  userId      String
+
+  documentId  String?
+  vaultDoc    VaultDocument? @relation(fields: [documentId], references: [id])
+
+  extractedType   String?
+  extractedData   Json
+  confidence      Float?
+
+  status      ReviewStatus @default(PENDING)
+  reviewedBy  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
+// ==================== MEDICATION INTELLIGENCE ====================
+
+model Medication {
+  id                  String   @id @default(uuid())
+  activeIngredientId  String
+  activeIngredient    ActiveIngredient @relation(fields: [activeIngredientId], references: [id])
+
+  brandName           String
+  genericName         String?
+  manufacturer        String?
+  dosageForm          String?
+  strength            String?
+  therapeuticClass    String?
+  atcCode             String?
+  isControlled        Boolean  @default(false)
+
+  commonSideEffects   String[]
+  contraindications   String[]
+  pregnancyCategory   String?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([brandName])
+  @@index([activeIngredientId])
+}
+
+model ActiveIngredient {
+  id                  String   @id @default(uuid())
+  name                String   @unique
+  description         String?
+  mechanismOfAction   String?
+
+  medications         Medication[]
+  countryMeds         CountryMedication[]
+  equivalents         MedicationEquivalent[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model CountryMedication {
+  id                  String   @id @default(uuid())
+  activeIngredientId  String
+  activeIngredient    ActiveIngredient @relation(fields: [activeIngredientId], references: [id])
+
+  country             String
+  commonBrands        String[]
+  regulatoryCategory  RegulatoryCategory @default(OTC)
+  requiresPrescription Boolean @default(false)
+  maxSupplyDays       Int?
+  refillAllowed       Boolean  @default(true)
+
+  estimatedCost       String?
+  costCurrency        String?
+  costLastUpdated     DateTime?
+  isAvailable         Boolean  @default(true)
+  commonAlternatives  String[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([activeIngredientId, country])
+  @@index([country])
+}
+
+model MedicationEquivalent {
+  id                    String   @id @default(uuid())
+  activeIngredientId    String
+  activeIngredient      ActiveIngredient @relation(fields: [activeIngredientId], references: [id])
+
+  sourceCountry         String
+  sourceBrand           String
+  targetCountry         String
+  targetBrand           String
+  equivalenceType       String   @default("DIRECT")
+  confidence            Float    @default(1.0)
+  notes                 String?
+
+  createdAt             DateTime @default(now())
+
+  @@unique([sourceCountry, sourceBrand, targetCountry])
+  @@index([activeIngredientId])
+}
+
+model DrugInteraction {
+  id             String   @id @default(uuid())
+  ingredientA    String
+  ingredientB    String
+
+  severity       String
+  description    String
+  mechanism      String?
+  recommendation String?
+  source         String?
+
+  createdAt      DateTime @default(now())
+
+  @@unique([ingredientA, ingredientB])
+  @@index([severity])
+}
+
+// ==================== PROVIDER SYSTEM ====================
+
+model Provider {
+  id          String   @id @default(uuid())
+  name        String
+  type        ProviderType
+  subtype     String?
+
+  description String?
+  website     String?
+  phone       String?
+  email       String?
+
+  country     String
+  city        String
+  address     String?
+  postalCode  String?
+  lat         Float?
+  lng         Float?
+
+  verificationStatus ProviderVerificationStatus @default(UNVERIFIED)
+  verifiedAt         DateTime?
+  verifiedBy         String?
+
+  languages   String[]
+  specialties String[]
+  insuranceAccepted String[]
+  paymentMethods    String[]
+
+  estimatedCost String?
+  costCurrency  String?
+  touristFriendly Boolean @default(false)
+
+  ratingAverage Float?   @default(0)
+  ratingCount   Int      @default(0)
+
+  hours        Json?
+
+  reviews        ProviderReview[]
+  availability   ProviderAvailability[]
+  contactChannels ProviderContactChannel[]
+  routing        ProviderRouting[]
+  dispatches     ProviderDispatcher[]
+  inboxItems     ProviderInbox[]
+  outcomes       ProviderOutcome[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([country, city])
+  @@index([type])
+  @@index([lat, lng])
+}
+
+model ProviderReview {
+  id         String   @id @default(uuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  userName   String?
+
+  rating     Int
+  comment    String?
+  language   String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([providerId, userId])
+}
+
+model ProviderAvailability {
+  id         String   @id @default(uuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  isAvailable Boolean @default(true)
+  slotDuration Int?
+  bufferMinutes Int?
+
+  @@unique([providerId, dayOfWeek])
+}
+
+model ProviderContactChannel {
+  id         String   @id @default(uuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  channel    String
+  value      String
+  label      String?
+  priority   Int      @default(0)
+
+  @@unique([providerId, channel, value])
+}
+
+model ProviderRouting {
+  id              String   @id @default(uuid())
+  providerId      String
+  provider        Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  active          Boolean  @default(true)
+  priority        Int      @default(0)
+
+  symptomKeywords String[]
+  severityLevels  String[]
+  languages       String[]
+  timeOfDay       String?
+
+  maxDailyPatients Int?
+  currentDailyCount Int   @default(0)
+  lastResetDate    DateTime?
+
+  @@index([active, priority])
+}
+
+model ProviderDispatcher {
+  id              String   @id @default(uuid())
+  providerId      String
+  provider        Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  sessionId       String?
+
+  status          String   @default("QUEUED")
+  channel         String
+
+  message         Json?
+  response        Json?
+
+  attemptedAt     DateTime?
+  deliveredAt     DateTime?
+  respondedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+}
+
+model ProviderInbox {
+  id          String   @id @default(uuid())
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  sessionId   String?
+  title       String
+  message     String
+  priority    String   @default("NORMAL")
+  status      String   @default("UNREAD")
+
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([providerId, status])
+}
+
+// ==================== PROVIDER NETWORK DOMAIN ====================
+
+enum LeadSource {
+  GEOAPIFY
+  OSM
+  MANUAL
+  REFERRAL
+  WEBSITE
+  AGENT_DISCOVERY
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  RESPONDED
+  ONBOARDED
+  ACTIVE
+  DECLINED
+  DUPLICATE
+  INVALID
+  ARCHIVED
+}
+
+enum ContactChannel {
+  WHATSAPP
+  SMS
+  PHONE
+  EMAIL
+  IN_APP
+  WEBSITE_FORM
+}
+
+enum ContactAttemptStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  RESPONDED
+  FAILED
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  ACTIVE
+  IN_PROGRESS
+  COMPLETED
+  RESOLVED
+  ESCALATED
+  CANCELLED
+}
+
+model ProviderLead {
+  id              String   @id @default(uuid())
+  providerId      String?
+
+  name            String
+  type            String
+  country         String
+  city            String?
+  address         String?
+  lat             Float?
+  lng             Float?
+
+  phone           String?
+  email           String?
+  website         String?
+
+  source          LeadSource
+  sourceId        String?
+  confidence      Float?
+
+  status          LeadStatus @default(NEW)
+  notes           String?
+  assignedTo      String?
+
+  contactedAt     DateTime?
+  respondedAt     DateTime?
+  onboardedAt     DateTime?
+
+  contactAttempts ProviderContactAttempt[]
+  escalation      ProviderEscalation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([country, city])
+  @@index([source])
+}
+
+model ProviderAssignment {
+  id              String           @id @default(uuid())
+  journeyId       String
+  providerId      String
+  userId          String
+
+  status          AssignmentStatus @default(ACTIVE)
+  priority        Int              @default(0)
+
+  assignedBy      String?
+  assignedAt      DateTime         @default(now())
+  resolvedAt      DateTime?
+  resolution      String?
+
+  contactAttempts ProviderContactAttempt[]
+  conversations  ProviderConversation[]
+  escalation     ProviderEscalation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([journeyId])
+  @@index([providerId])
+  @@index([status])
+}
+
+model ProviderContactAttempt {
+  id              String                @id @default(uuid())
+  leadId          String?
+  assignmentId    String?
+  providerId      String
+
+  channel         ContactChannel
+  destination     String
+  message         String?
+
+  status          ContactAttemptStatus  @default(PENDING)
+  attemptNumber   Int                   @default(1)
+  maxAttempts     Int                   @default(3)
+
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  respondedAt     DateTime?
+  failedAt        DateTime?
+  failureReason   String?
+
+  response        ProviderResponse?
+  lead            ProviderLead?         @relation(fields: [leadId], references: [id])
+  assignment      ProviderAssignment?   @relation(fields: [assignmentId], references: [id])
+
+  createdAt       DateTime              @default(now())
+
+  @@index([leadId])
+  @@index([assignmentId])
+  @@index([status])
+}
+
+model ProviderResponse {
+  id              String   @id @default(uuid())
+  contactAttemptId String  @unique
+  contactAttempt  ProviderContactAttempt @relation(fields: [contactAttemptId], references: [id])
+
+  responseText    String?
+  responseType    String   @default("MESSAGE")
+  intent          String?
+
+  receivedAt      DateTime @default(now())
+
+  responseTimeSeconds Int?
+  satisfied       Boolean?
+  followUpRequired Boolean @default(false)
+
+  createdAt       DateTime @default(now())
+}
+
+model ProviderAvailabilityWindow {
+  id              String   @id @default(uuid())
+  providerId      String
+
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  timezone        String?
+
+  isAvailable     Boolean  @default(true)
+  isRecurring     Boolean  @default(true)
+  validFrom       DateTime?
+  validUntil      DateTime?
+
+  maxPatients     Int?
+  currentBookings Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([providerId, dayOfWeek])
+  @@index([isAvailable])
+}
+
+model ProviderSchedule {
+  id              String             @id @default(uuid())
+  providerId      String             @unique
+  timezone        String             @default("UTC")
+  slotDurationMin Int                @default(30)
+  bufferMin       Int                @default(15)
+  maxBookingsPerSlot Int             @default(1)
+  available       Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  slots           ProviderAvailabilitySlot[]
+  exceptions      ProviderAvailabilityException[]
+}
+
+model ProviderAvailabilitySlot {
+  id              String           @id @default(uuid())
+  scheduleId      String
+  schedule        ProviderSchedule @relation(fields: [scheduleId], references: [id])
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  recurring       Boolean          @default(true)
+  validFrom       DateTime?
+  validUntil      DateTime?
+  maxPatients     Int?
+  createdAt       DateTime         @default(now())
+
+  @@index([scheduleId, dayOfWeek])
+}
+
+model ProviderAvailabilityException {
+  id              String           @id @default(uuid())
+  scheduleId      String
+  schedule        ProviderSchedule @relation(fields: [scheduleId], references: [id])
+  date            DateTime
+  startTime       String?
+  endTime         String?
+  type            String           @default("UNAVAILABLE")
+  reason          String?
+  createdAt       DateTime         @default(now())
+
+  @@index([scheduleId, date])
+}
+
+model ProviderConversation {
+  id              String   @id @default(uuid())
+  assignmentId    String
+  assignment      ProviderAssignment @relation(fields: [assignmentId], references: [id])
+
+  channel         ContactChannel
+  externalThreadId String?
+
+  participants    String[]
+  messageCount    Int      @default(0)
+  lastMessageAt   DateTime?
+
+  status          String   @default("ACTIVE")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([assignmentId])
+  @@index([status])
+}
+
+model ProviderEscalation {
+  id              String   @id @default(uuid())
+  leadId          String?
+  assignmentId    String?  @unique
+  lead            ProviderLead?       @relation(fields: [leadId], references: [id])
+  assignment      ProviderAssignment? @relation(fields: [assignmentId], references: [id])
+
+  reason          String
+  severity        String   @default("MEDIUM")
+  status          String   @default("OPEN")
+
+  assignedTo      String?
+  previousHandler String?
+  notes           String?
+
+  openedAt        DateTime @default(now())
+  resolvedAt      DateTime?
+  resolution      String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([severity])
+}
+
+model ProviderNetworkMetrics {
+  id              String   @id @default(uuid())
+
+  date            DateTime
+  providerId      String?
+
+  totalLeads      Int      @default(0)
+  convertedLeads  Int      @default(0)
+  conversionRate  Float?
+
+  totalAssignments Int     @default(0)
+  successfulAssignments Int @default(0)
+  avgResponseTimeSeconds Int?
+
+  totalConversations Int   @default(0)
+  avgMessagesPerConversation Float?
+
+  totalEscalations Int     @default(0)
+  unresolvedEscalations Int @default(0)
+
+  periodStart     DateTime
+  periodEnd       DateTime
+  computedAt      DateTime @default(now())
+
+  @@index([date])
+  @@index([providerId])
+}
+
+// ==================== COMMUNICATION ====================
+
+enum CommunicationChannel {
+  WHATSAPP
+  PHONE
+  SMS
+  EMAIL
+  IN_APP
+}
+
+enum ConversationStatus {
+  ACTIVE
+  WAITING
+  RESOLVED
+  ESCALATED
+  CLOSED
+}
+
+enum SenderType {
+  PATIENT
+  PROVIDER
+  INTERPRETER
+  AGENT
+  SYSTEM
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model Conversation {
+  id              String   @id @default(uuid())
+  journeyId       String
+  providerId      String?
+  assignmentId    String?
+  status          ConversationStatus @default(ACTIVE)
+  channel         CommunicationChannel
+  lastMessageAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  messages        Message[]
+  callSessions    CallSession[]
+
+  @@index([journeyId])
+  @@index([providerId])
+  @@index([status])
+}
+
+model Message {
+  id                String         @id @default(uuid())
+  conversationId    String
+  senderType        SenderType
+  senderId          String?
+  content           String
+  translatedContent String?
+  language          String?
+  deliveryStatus    DeliveryStatus @default(QUEUED)
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  createdAt         DateTime       @default(now())
+
+  conversation      Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model CallSession {
+  id              String   @id @default(uuid())
+  conversationId  String
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  durationSeconds Int?
+  recordingUrl    String?
+  transcriptUrl   String?
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+}
+
+model ProviderContactProfile {
+  id                  String   @id @default(uuid())
+  providerId          String   @unique
+  whatsappNumber      String?
+  phoneNumber         String?
+  email               String?
+  preferredChannel    CommunicationChannel @default(IN_APP)
+  responseRate        Float?
+  averageResponseTime Float?
+  lastContactedAt     DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model MessageDelivery {
+  id              String            @id @default(uuid())
+  conversationId  String?
+  providerId      String?
+  attemptId       String?
+  channel         CommunicationChannel
+  externalId      String?
+  status          DeliveryStatus    @default(QUEUED)
+  errorCode       String?
+  errorMessage    String?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([status])
+  @@index([externalId])
+  @@index([attemptId])
+}
+
+model MessageTemplate {
+  id      String              @id @default(uuid())
+  key     String              @unique
+  name    String
+  content String
+  active  Boolean             @default(true)
+  channel CommunicationChannel @default(WHATSAPP)
+}
+
+// ==================== ESCALATION ====================
+
+enum EscalationStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum EscalationReason {
+  NO_PROVIDER_RESPONSE
+  NO_PROVIDER_AVAILABLE
+  FAILED_COMMUNICATION
+  FAILED_ASSIGNMENT
+  PATIENT_REQUEST
+  AGENT_FAILURE
+}
+
+enum EscalationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model EscalationCase {
+  id                  String             @id @default(uuid())
+  journeyId           String
+  providerId          String?
+  assignmentId        String?
+  severity            EscalationSeverity
+  reason              EscalationReason
+  status              EscalationStatus   @default(OPEN)
+  assignedOperatorId  String?
+  operatorNotes       String?
+  resolution          String?
+  resolvedAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([status])
+  @@index([journeyId])
+  @@index([assignedOperatorId])
+  @@index([severity])
+}
+
+// ==================== INTERPRETER ====================
+
+model InterpreterSession {
+  id                    String   @id @default(uuid())
+  travelHealthSessionId String
+  travelHealthSession   TravelHealthSession @relation(fields: [travelHealthSessionId], references: [id])
+
+  status                String   @default("ACTIVE")
+  patientLanguage       String
+  providerLanguage      String
+  medicalContext        Json?
+
+  patientVoiceId        String?
+  providerVoiceId       String?
+
+  messages              ConversationMessage[]
+  contexts              InterpreterContext[]
+
+  startedAt             DateTime @default(now())
+  completedAt           DateTime?
+  durationSeconds       Int?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([travelHealthSessionId])
+}
+
+model ConversationMessage {
+  id                   String   @id @default(uuid())
+  interpreterSessionId String
+  interpreterSession   InterpreterSession @relation(fields: [interpreterSessionId], references: [id])
+
+  speaker              String
+  sequence             Int
+
+  originalText         String
+  translatedText       String?
+  originalAudioUrl     String?
+  translatedAudioUrl   String?
+
+  sttConfidence        Float?
+  translationConfidence Float?
+
+  recordedAt           DateTime?
+  translatedAt         DateTime?
+  metadata             Json?
+
+  createdAt            DateTime @default(now())
+
+  @@index([interpreterSessionId, sequence])
+}
+
+model InterpreterContext {
+  id                String   @id @default(uuid())
+  interpreterSessionId String
+  interpreterSession   InterpreterSession @relation(fields: [interpreterSessionId], references: [id])
+
+  symptoms          Json?
+  medications       Json?
+  allergies         Json?
+  conditions        Json?
+  severity          String?
+
+  injectedAt        DateTime @default(now())
+}
+
+// ==================== OUTCOME INTELLIGENCE ====================
+
+model OutcomeInsight {
+  id                    String   @id @default(uuid())
+  travelHealthSessionId String   @unique
+  userId                String
+
+  country               String
+  city                  String?
+  severity              String?
+
+  symptoms              String[]
+  symptomDuration       String?
+
+  providerType          String?
+  providerId            String?
+  medicationUsed        String?
+  medicationIngredient  String?
+
+  result                OutcomeResult
+  recoveryTimeHours     Int?
+  followUpRequired      Boolean  @default(false)
+  followUpCompleted     Boolean?
+
+  wouldRecommend        Boolean?
+  rating                Int?
+  reviewNotes           String?
+
+  session               TravelHealthSession @relation(fields: [travelHealthSessionId], references: [id])
+  medicationOutcomes    MedicationOutcome[]
+  providerOutcome       ProviderOutcome?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([country, result])
+  @@index([medicationIngredient])
+  @@index([providerId])
+}
+
+model MedicationOutcome {
+  id                String   @id @default(uuid())
+  outcomeInsightId  String
+  outcome           OutcomeInsight @relation(fields: [outcomeInsightId], references: [id])
+
+  medicationName    String
+  activeIngredient  String?
+  dosage            String?
+  durationDays      Int?
+
+  effectiveness     String
+  sideEffects       String[]
+
+  createdAt         DateTime @default(now())
+
+  @@index([activeIngredient, effectiveness])
+}
+
+model ProviderOutcome {
+  id                String   @id @default(uuid())
+  outcomeInsightId  String   @unique
+  outcome           OutcomeInsight @relation(fields: [outcomeInsightId], references: [id])
+
+  providerId        String
+  provider          Provider @relation(fields: [providerId], references: [id])
+
+  waitTimeMinutes   Int?
+  consultationQuality String?
+  costSatisfaction  String?
+  languageBarrier   Boolean  @default(false)
+  wouldReturn       Boolean?
+
+  createdAt         DateTime @default(now())
+
+  @@index([providerId])
+}
+
+model OutcomeAggregation {
+  id                String   @id @default(uuid())
+
+  country           String
+  providerType      String?
+  medicationIngredient String?
+  symptom           String?
+  severity          String?
+
+  totalCases        Int      @default(0)
+  recoveredCount    Int      @default(0)
+  avgRecoveryHours  Float?
+  hospitalizationRate Float?
+
+  periodStart       DateTime
+  periodEnd         DateTime
+  computedAt        DateTime @default(now())
+
+  @@index([country, providerType])
+  @@index([periodStart, periodEnd])
+}
+
+// ==================== ORGANIZATIONS ====================
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  type        String
+
+  description String?
+  logoUrl     String?
+  website     String?
+  country     String?
+  city        String?
+  settings    Json?
+
+  members     OrganizationMember[]
+  invitations OrganizationInvitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model OrganizationMember {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  role            Role
+  licenseNumber   String?
+  specialization  String?
+  languages       String[]
+  isActive        Boolean      @default(true)
+  lastActiveAt    DateTime?
+  createdBy       String?
+
+  createdAt       DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model OrganizationInvitation {
+  id             String   @id @default(uuid())
+  email          String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           Role
+  token          String   @unique
+  status         String   @default("PENDING")
+  inviterId      String
+  invitedUserName String?
+  message        String?
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+
+  createdAt      DateTime @default(now())
+
+  @@index([email])
+  @@index([organizationId, status])
+}
+
+// ==================== AGENT OS ====================
+
+model AgentTask {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  sessionId   String?
+
+  goal        String
+  context     Json?
+  plan        Json?
+  currentNode String?
+
+  status      AgentTaskStatus @default(PLANNING)
+
+  reasoning   String?
+  result      Json?
+  reflection  String?
+  confidence  Float?
+
+  needsApproval Boolean @default(false)
+  approvedAt    DateTime?
+  approvedBy    String?
+  approvalNote  String?
+
+  startedAt     DateTime?
+  completedAt   DateTime?
+  durationMs    Int?
+
+  nodeExecutions AgentNodeExecution[]
+  toolCalls     AgentToolCall[]
+  approvals     AgentApproval[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([sessionId])
+}
+
+model AgentNodeExecution {
+  id            String   @id @default(uuid())
+  taskId        String
+  task          AgentTask @relation(fields: [taskId], references: [id])
+
+  nodeType      AgentNodeType
+  sequence      Int
+
+  input         Json?
+  output        Json?
+  toolCalls     Json?
+
+  status        String   @default("PENDING")
+  startedAt     DateTime?
+  completedAt   DateTime?
+  durationMs    Int?
+  error         String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([taskId, sequence])
+}
+
+model AgentToolCall {
+  id            String   @id @default(uuid())
+  taskId        String
+  task          AgentTask @relation(fields: [taskId], references: [id])
+
+  toolName      String
+  input         Json
+  output        Json?
+  status        String   @default("PENDING")
+  error         String?
+  durationMs    Int?
+
+  createdAt     DateTime @default(now())
+}
+
+model AgentApproval {
+  id            String   @id @default(uuid())
+  taskId        String
+  task          AgentTask @relation(fields: [taskId], references: [id])
+
+  requestType   String
+  reason        String
+  status        String   @default("PENDING")
+  decidedBy     String?
+  decidedAt     DateTime?
+  note          String?
+
+  createdAt     DateTime @default(now())
+}
+
+// ==================== AUDIT ====================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  event       AuditEventType
+  actorId     String?
+  actorEmail  String?
+  actorRole   String?
+  user        User?    @relation(fields: [actorId], references: [id])
+
+  resource    String
+  resourceId  String?
+  targetId    String?
+  metadata    Json?
+  severity    String   @default("INFO")
+  ipAddress   String?
+  userAgent   String?
+  organizationId String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([event])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  channel         NotificationChannel
+  priority        String   @default("NORMAL")
+
+  title           String
+  body            String
+  actionUrl       String?
+  metadata        Json?
+
+  status          String   @default("PENDING")
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  failedAt        DateTime?
+  failureReason   String?
+
+  groupKey        String?
+  groupCount      Int      @default(1)
+
+  createdAt       DateTime @default(now())
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model NotificationPreference {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+
+  emailEnabled    Boolean  @default(true)
+  pushEnabled     Boolean  @default(true)
+  whatsappEnabled Boolean  @default(false)
+  smsEnabled      Boolean  @default(false)
+
+  passportUpdates  Boolean @default(true)
+  memoryUpdates    Boolean @default(true)
+  journeyUpdates   Boolean @default(true)
+  providerMessages Boolean @default(true)
+  promoMessages    Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationTemplate {
+  id        String @id @default(uuid())
+  key       String @unique
+  channels  Json
+  variables String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== REVIEW WORKFLOW ====================
+
+model ReviewTask {
+  id              String   @id @default(uuid())
+  resourceType    ReviewResourceType
+  resourceId      String
+  priority        String   @default("NORMAL")
+  status          String   @default("PENDING")
+
+  assignedTo      String?
+  assignedAt      DateTime?
+  completedBy     String?
+  completedAt     DateTime?
+  decision        String?
+  decisionNote    String?
+
+  isEscalated           Boolean @default(false)
+  escalatedTo           String?
+  escalationReason      String?
+  confidenceScore       Float?
+  requiresSecondOpinion Boolean @default(false)
+  secondOpinionBy       String?
+
+  comments        ReviewComment[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, priority])
+  @@index([resourceType, resourceId])
+  @@index([assignedTo, status])
+}
+
+model ReviewComment {
+  id            String   @id @default(uuid())
+  reviewTaskId  String
+  task          ReviewTask @relation(fields: [reviewTaskId], references: [id])
+  authorId      String
+  comment       String
+  createdAt     DateTime @default(now())
+}
+
+model ReviewQueueConfig {
+  id          String @id @default(uuid())
+  resourceType ReviewResourceType @unique
+  autoAssignRole String?
+  maxQueueSize   Int     @default(50)
+  priorityFormula String?
+  targetHours    Int     @default(24)
+  escalationHours Int    @default(48)
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== COUNTRY DATA ====================
+
+model CountryHealthcareProfile {
+  id               String   @id @default(uuid())
+  country          String   @unique
+  emergencyNumber  String
+  prescriptionRules String
+  insuranceNotes   String
+  touristGuidance  String
+}
