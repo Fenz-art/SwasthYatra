@@ -1,29 +1,32 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { showToast } from "@/components/ui/toast"
 import {
   createAgentTask,
   executeAgentTask,
   getAgentTaskStatus,
-  getAgentTaskHistory
+  getAgentTaskHistory,
 } from "@/modules/agent/actions"
 import {
-  Compass,
-  ArrowRight,
+  Sparkles,
+  Send,
   CheckCircle2,
   XCircle,
-  HelpCircle,
+  Loader2,
+  MapPin,
+  Stethoscope,
+  MessageSquare,
+  Phone,
+  Shield,
+  User,
+  Zap,
   Clock,
-  ShieldCheck,
-  Bot,
-  Sparkles,
-  Link as LinkIcon
+  ArrowRight,
 } from "lucide-react"
 
 // Maps technical node names to customer-facing human copy
@@ -39,6 +42,13 @@ const nodeTypeLabels: Record<string, string> = {
   HUMAN_APPROVAL: "Awaiting operator authorization review",
 }
 
+const contextCards = [
+  { icon: MapPin, label: "Tokyo, Japan", sub: "Current location" },
+  { icon: Stethoscope, label: "Dr. Tanaka", sub: "General Medicine" },
+  { icon: Clock, label: "Today 3:00 PM", sub: "Appointment" },
+  { icon: MessageSquare, label: "EN → JA", sub: "Interpreter ready" },
+]
+
 export default function AgentWorkspace() {
   const [goal, setGoal] = useState("")
   const [sessionId, setSessionId] = useState("")
@@ -48,12 +58,16 @@ export default function AgentWorkspace() {
   const [history, setHistory] = useState<any[]>([])
 
   const pollingInterval = useRef<NodeJS.Timeout | null>(null)
+  const logEndRef = useRef<HTMLDivElement>(null)
 
-  // Fetch task history on mount
   useEffect(() => {
     loadHistory()
     return () => stopPolling()
   }, [])
+
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [task])
 
   const loadHistory = async () => {
     try {
@@ -71,8 +85,11 @@ export default function AgentWorkspace() {
         const updatedTask = await getAgentTaskStatus(taskId)
         if (updatedTask) {
           setTask(updatedTask)
-          // Stop polling if the task is terminal
-          if (updatedTask.status === "COMPLETED" || updatedTask.status === "FAILED" || updatedTask.status === "CANCELLED") {
+          if (
+            updatedTask.status === "COMPLETED" ||
+            updatedTask.status === "FAILED" ||
+            updatedTask.status === "CANCELLED"
+          ) {
             stopPolling()
             setLoading(false)
             loadHistory()
@@ -98,21 +115,15 @@ export default function AgentWorkspace() {
     setActiveTaskId(null)
 
     try {
-      // Step 1: Create the task in database immediately (planning state)
       const initialTask = await createAgentTask(goal, sessionId || undefined)
       setActiveTaskId(initialTask.id)
       setTask(initialTask)
-
-      // Step 2: Start polling database state changes
       startPolling(initialTask.id)
-
-      // Step 3: Trigger backend execution asynchronously (don't block the UI thread completely)
-      executeAgentTask(initialTask.id).catch(err => {
+      executeAgentTask(initialTask.id).catch((err) => {
         showToast((err as Error).message, "error")
         stopPolling()
         setLoading(false)
       })
-
     } catch (err) {
       showToast((err as Error).message, "error")
       setLoading(false)
@@ -130,222 +141,401 @@ export default function AgentWorkspace() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "SUCCESS":
-        return <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
+        return <CheckCircle2 className="h-4 w-4 text-accent-green shrink-0" />
       case "FAILED":
-        return <XCircle className="h-4 w-4 text-red-400 shrink-0" />
+        return <XCircle className="h-4 w-4 text-accent-red shrink-0" />
       case "RUNNING":
-        return <Spinner size="sm" className="text-[#00E5FF] shrink-0" />
+        return <Loader2 className="h-4 w-4 text-accent-cyan animate-spin shrink-0" />
       default:
-        return <span className="h-2 w-2 rounded-full bg-white/20 shrink-0 mx-1" />
+        return (
+          <span className="h-2 w-2 rounded-full bg-white/20 shrink-0 mx-1 inline-block" />
+        )
     }
   }
 
+  const isStreaming = loading || (task && task.status === "RUNNING")
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-white/[0.08] pb-4">
-        <h1 className="text-xl font-semibold text-white/95">Navigation Assistant</h1>
-        <p className="text-xs text-white/45">
-          Consult the autonomous coordinator to evaluate symptoms, translate prescriptions, or route care.
+    <div className="space-y-0 -m-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-accent-cyan" />
+            <h1 className="text-sm font-semibold text-white/95">Navigation Assistant</h1>
+          </div>
+          {isStreaming && (
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent-cyan-soft">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse" />
+              <span className="text-[11px] text-accent-cyan">Working</span>
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-white/40">
+          Coordinates care on your behalf. No prompts needed.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Workspace (Left Column) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Input Panel */}
-          <Card className="border-white/[0.08] bg-[#0D1015]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-white/90">Define Your Situation</CardTitle>
-              <CardDescription className="text-xs text-white/45">
-                Explain your medical concern, location, or prescription translation need.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    value={goal}
-                    onChange={e => setGoal(e.target.value)}
-                    placeholder="e.g., I have stomach pain and need a pharmacist in Tokyo"
-                    className="bg-[#07080A] border-white/[0.08] text-sm placeholder-white/30 text-white/95 focus-visible:ring-[#00E5FF] focus-visible:border-[#00E5FF]"
-                    onKeyDown={e => e.key === "Enter" && handleExecute()}
-                  />
-                  <Button
-                    onClick={handleExecute}
-                    disabled={loading || !goal}
-                    className="bg-[#00E5FF] hover:bg-[#00E5FF]/80 text-[#07080A] font-semibold text-xs h-10 px-4 shrink-0 transition-colors"
-                  >
-                    {loading ? <Spinner size="sm" /> : <span className="flex items-center gap-1">Ask Assistant <ArrowRight className="h-3.5 w-3.5" /></span>}
-                  </Button>
-                </div>
-              </div>
+      {/* Context Bar */}
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-white/[0.08] bg-white/[0.01] overflow-x-auto">
+        {contextCards.map((card) => (
+          <div
+            key={card.label}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#0D1015] border border-white/[0.06] flex-shrink-0"
+          >
+            <card.icon className="h-3.5 w-3.5 text-white/40" />
+            <div>
+              <p className="text-[12px] font-medium text-white/85">{card.label}</p>
+              <p className="text-[10px] text-white/40">{card.sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-              {/* Linked Journey optional field */}
-              <div className="flex items-center gap-3 text-xs bg-white/[0.02] border border-white/[0.06] p-2.5 rounded">
-                <LinkIcon className="h-3.5 w-3.5 text-white/45" />
-                <span className="text-white/45 font-medium">Link to Travel Journey ID (optional):</span>
+      {/* Main workspace */}
+      <div className="flex min-h-[calc(100vh-200px)]">
+        {/* Left: Activity Log */}
+        <main className="flex-1 flex flex-col min-w-0">
+          {/* Activity area */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-3">
+            {/* Input at top */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] p-5 mb-6">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-3">
+                Define Your Situation
+              </p>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleExecute()}
+                  placeholder="e.g., I have stomach pain and need a pharmacist in Tokyo"
+                  className="flex-1 px-4 py-2.5 rounded-md bg-[#07080A] border border-white/[0.08] text-sm text-white/90 placeholder:text-white/25 outline-none focus:border-[#00E5FF]/40 transition-colors"
+                />
+                <button
+                  onClick={handleExecute}
+                  disabled={loading || !goal}
+                  className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed px-5"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Start</span>
+                      <Send className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </button>
+              </div>
+              {/* Session ID field */}
+              <div className="mt-3 flex items-center gap-2 text-[11px] bg-white/[0.01] border border-white/[0.04] p-2.5 rounded-md">
+                <span className="text-white/35 font-medium shrink-0">Journey ID (optional):</span>
                 <input
                   type="text"
                   value={sessionId}
-                  onChange={e => setSessionId(e.target.value)}
+                  onChange={(e) => setSessionId(e.target.value)}
                   placeholder="Paste travel session ID"
-                  className="bg-transparent border-none outline-none text-white/90 placeholder-white/20 w-full font-mono text-[11px]"
+                  className="bg-transparent border-none outline-none text-white/75 placeholder:text-white/20 w-full font-mono text-[11px]"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Active / Current Execution Progress */}
-          {task && (
-            <div className="space-y-6 animate-in fade-in-0 duration-200">
-              {/* Steps Progress */}
-              <Card className="border-white/[0.08] bg-[#0D1015]">
-                <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-                  <div>
-                    <CardTitle className="text-sm font-medium text-white/90">Live Activity</CardTitle>
-                    <CardDescription className="text-xs text-white/45">
-                      Progress tracking for your current care request
-                    </CardDescription>
+            {/* Execution steps */}
+            {task && (
+              <AnimatePresence>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-3"
+                >
+                  {/* Steps header */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                      Live Activity
+                    </p>
+                    <Badge
+                      className={
+                        task.status === "COMPLETED"
+                          ? "bg-green-500/10 text-green-400 border border-green-500/20 text-[10px]"
+                          : task.status === "FAILED"
+                          ? "bg-red-500/10 text-red-400 border border-red-500/20 text-[10px]"
+                          : "bg-white/[0.06] text-white/55 text-[10px]"
+                      }
+                    >
+                      {task.status}
+                    </Badge>
                   </div>
-                  <Badge variant={task.status === "COMPLETED" ? "default" : "secondary"} className={task.status === "COMPLETED" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-white/[0.08] text-white/65"}>
-                    {task.status}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="space-y-3">
+
                   {task.nodeExecutions && task.nodeExecutions.length > 0 ? (
-                    task.nodeExecutions.map((exec: any, i: number) => (
-                      <div key={exec.id} className="flex items-center justify-between rounded border border-white/[0.06] bg-white/[0.01] p-3 text-xs">
-                        <div className="flex items-center gap-3">
-                          <span className="text-white/30 font-mono text-[10px] w-4">0{i + 1}</span>
-                          <span className="font-medium text-white/80">
-                            {nodeTypeLabels[exec.nodeType] || exec.nodeType.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                    <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] overflow-hidden">
+                      {task.nodeExecutions.map((exec: any, i: number) => (
+                        <motion.div
+                          key={exec.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: i * 0.05 }}
+                          className="flex items-center justify-between px-5 py-3 border-b border-white/[0.04] last:border-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(exec.status)}
+                            <span className="text-[13px] text-white/75">
+                              {nodeTypeLabels[exec.nodeType] ||
+                                exec.nodeType.replace(/_/g, " ")}
+                            </span>
+                          </div>
                           {exec.durationMs && (
-                            <span className="text-[10px] text-white/30 font-mono">{exec.durationMs}ms</span>
+                            <span className="text-[10px] text-white/30 font-mono">
+                              {exec.durationMs}ms
+                            </span>
                           )}
-                          {getStatusIcon(exec.status)}
-                        </div>
-                      </div>
-                    ))
+                        </motion.div>
+                      ))}
+                    </div>
                   ) : (
-                    <div className="py-4 text-center text-xs text-white/45">
-                      Preparing coordination activities...
+                    <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] py-8 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse" />
+                        <div
+                          className="w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse"
+                          style={{ animationDelay: "200ms" }}
+                        />
+                        <div
+                          className="w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse"
+                          style={{ animationDelay: "400ms" }}
+                        />
+                      </div>
+                      <p className="text-[13px] text-white/40">
+                        Preparing coordination activities...
+                      </p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
 
-              {/* Care Plan Card */}
-              {task.reflection && (
-                <Card className="border-white/[0.08] bg-[#0D1015]">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-white/90">Care Navigation Plan</CardTitle>
-                    <CardDescription className="text-xs text-white/45">
-                      Verified clinical options matching your context
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-xs text-white/80 leading-relaxed whitespace-pre-line">
-                      {task.reflection}
-                    </p>
+                  {/* Care Plan */}
+                  {task.reflection && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-white/[0.08] bg-[#0D1015] p-5"
+                    >
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-3">
+                        Care Navigation Plan
+                      </p>
+                      <p className="text-[13px] text-white/80 leading-relaxed whitespace-pre-line">
+                        {task.reflection}
+                      </p>
+                      {task.confidence !== undefined && (
+                        <div className="pt-4 mt-4 border-t border-white/[0.06] space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-white/40">Confidence Score</span>
+                            <span className="text-accent-cyan font-semibold">
+                              {Math.round(task.confidence * 100)}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-white/[0.05] overflow-hidden">
+                            <div
+                              className="h-full bg-accent-cyan rounded-full transition-all duration-500"
+                              style={{ width: `${Math.round(task.confidence * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
 
-                    {task.confidence !== undefined && (
-                      <div className="pt-2 border-t border-white/[0.06] space-y-1.5">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="text-white/45 font-medium">Confidence Score</span>
-                          <span className="text-[#00E5FF] font-semibold">{Math.round(task.confidence * 100)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-white/[0.05] overflow-hidden">
-                          <div
-                            className="h-full bg-[#00E5FF] rounded-full transition-all duration-500"
-                            style={{ width: `${Math.round(task.confidence * 100)}%` }}
-                          />
-                        </div>
+                  {/* Operator Approval */}
+                  {task.needsApproval && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-accent-amber/20 bg-accent-amber-soft/20 p-5"
+                    >
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-accent-amber mb-2">
+                        Operator Review Required
+                      </p>
+                      <p className="text-[13px] text-amber-200/75 mb-4">
+                        This plan involves specialized medication matching and requires clinician
+                        or network operator confirmation before dispatching.
+                      </p>
+                      <div className="flex gap-2">
+                        <button className="btn-primary bg-accent-amber text-[#07080A] hover:bg-accent-amber/80 text-xs h-8 px-3">
+                          Authorize Care Dispatch
+                        </button>
+                        <button className="btn-secondary text-xs h-8 px-3">
+                          Request Route Override
+                        </button>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+                    </motion.div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            )}
 
-              {/* Operator Approval Request */}
-              {task.needsApproval && (
-                <Card className="border-amber-500/20 bg-amber-500/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-amber-400">
-                      Operator Review Required
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-xs text-amber-200/80">
-                      This plan involves specialized medication matching and requires clinician or network operator confirmation before dispatching.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-[#07080A] font-semibold text-xs h-8 px-3">
-                        Authorize Care Dispatch
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-white/[0.08] hover:bg-white/[0.04] text-white/85 text-xs h-8 px-3">
-                        Request Route Override
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+            {!task && !loading && (
+              <div className="py-12 text-center">
+                <Sparkles className="h-8 w-8 text-white/15 mx-auto mb-4" />
+                <p className="text-[14px] font-medium text-white/50 mb-2">
+                  Navigation Assistant is ready
+                </p>
+                <p className="text-[13px] text-white/30 max-w-sm mx-auto">
+                  Describe your situation above and the system will coordinate care on your behalf.
+                </p>
+              </div>
+            )}
+
+            <div ref={logEndRef} />
+          </div>
+
+          {/* Note bar */}
+          <div className="border-t border-white/[0.08] bg-[#07080A] px-6 py-3">
+            <p className="text-center text-[11px] text-white/30">
+              The Navigation Assistant coordinates care on your behalf. No prompts needed.
+            </p>
+          </div>
+        </main>
+
+        {/* Right Panel */}
+        <aside className="w-72 border-l border-white/[0.08] bg-white/[0.01] overflow-y-auto flex-shrink-0">
+          <div className="p-5 space-y-5">
+            {/* Journey Status */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-3">
+                Journey Status
+              </p>
+              <div className="space-y-2">
+                {[
+                  { label: "Assessment", done: true },
+                  { label: "Provider Match", done: true },
+                  { label: "Interpreter", done: true },
+                  { label: "Appointment", done: false, current: true },
+                  { label: "Follow-up", done: false },
+                ].map((step) => (
+                  <div key={step.label} className="flex items-center gap-2">
+                    <div
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        step.done
+                          ? "bg-accent-green"
+                          : step.current
+                          ? "bg-accent-cyan animate-pulse"
+                          : "bg-stone"
+                      }`}
+                    />
+                    <span
+                      className={`text-[13px] ${
+                        step.done || step.current ? "text-body" : "text-stone"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* History Panel (Right Column) */}
-        <div className="space-y-6">
-          {/* Quick templates / examples */}
-          <Card className="border-white/[0.08] bg-[#0D1015]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-white/45">
-                Suggested Scenarios
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {[
-                { label: "Stomach pain in Tokyo", query: "I have stomach pain in Tokyo, Japan" },
-                { label: "Find pharmacist in Bangkok", query: "Find a pharmacy in Bangkok, Thailand" },
-                { label: "What is Crocin in Japan?", query: "What is Crocin called in Japan?" },
-                { label: "English doctor in Dubai", query: "Find an English-speaking doctor in Dubai, UAE" },
-              ].map((ex, i) => (
-                <button
-                  key={i}
-                  onClick={() => setGoal(ex.query)}
-                  className="w-full flex items-center justify-between rounded border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-left text-xs text-white/65 hover:bg-white/[0.06] hover:text-white/95 transition-all group"
-                >
-                  <span>{ex.label}</span>
-                  <ArrowRight className="h-3 w-3 text-white/20 group-hover:text-[#00E5FF] transition-colors" />
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Past execution ledger */}
-          <Card className="border-white/[0.08] bg-[#0D1015]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-white/45">
-                Recent Queries
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {history.length === 0 ? (
-                <div className="p-4 text-center text-xs text-white/30">
-                  No query history recorded.
+            {/* Provider Card */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-3">
+                Confirmed Provider
+              </p>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-surface-elevated border border-white/[0.08] flex items-center justify-center text-sm font-semibold text-white/90">
+                  DT
                 </div>
-              ) : (
-                <div className="divide-y divide-white/[0.04] max-h-[300px] overflow-y-auto">
+                <div>
+                  <p className="text-[14px] text-on-dark">Dr. Hiroshi Tanaka</p>
+                  <p className="text-[13px] text-mute">General Medicine</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[13px] text-mute">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Tokyo Medical Center, 2.3km
+                </div>
+                <div className="flex items-center gap-2 text-[13px] text-mute">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  English, Japanese
+                </div>
+                <div className="flex items-center gap-2 text-[13px] text-accent-green">
+                  <Shield className="h-3.5 w-3.5" />
+                  Accepts International Patients
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-3">
+                Quick Actions
+              </p>
+              <div className="space-y-1.5">
+                {[
+                  { icon: Phone, label: "Call Provider" },
+                  { icon: MessageSquare, label: "Message Interpreter" },
+                  { icon: Zap, label: "Reschedule" },
+                  { icon: Shield, label: "Emergency Help" },
+                ].map((action) => (
+                  <button
+                    key={action.label}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all text-left"
+                  >
+                    <action.icon className="h-4 w-4 text-mute" />
+                    <span className="text-[13px] text-body">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Suggested Scenarios */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-3">
+                Suggested Scenarios
+              </p>
+              <div className="space-y-1.5">
+                {[
+                  { label: "Stomach pain in Tokyo", query: "I have stomach pain in Tokyo, Japan" },
+                  { label: "Find pharmacist in Bangkok", query: "Find a pharmacy in Bangkok, Thailand" },
+                  { label: "What is Crocin in Japan?", query: "What is Crocin called in Japan?" },
+                  { label: "English doctor in Dubai", query: "Find an English-speaking doctor in Dubai, UAE" },
+                ].map((ex) => (
+                  <button
+                    key={ex.label}
+                    onClick={() => setGoal(ex.query)}
+                    className="w-full flex items-center justify-between rounded-md bg-white/[0.02] border border-white/[0.06] px-3 py-2 text-left text-[13px] text-white/55 hover:bg-white/[0.06] hover:text-white/90 transition-all group"
+                  >
+                    <span>{ex.label}</span>
+                    <ArrowRight className="h-3 w-3 text-white/20 group-hover:text-accent-cyan transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tip */}
+            <div className="rounded-xl border border-accent-cyan-soft bg-accent-cyan-soft/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-accent-cyan" />
+                <span className="text-[13px] font-medium text-accent-cyan">Tip</span>
+              </div>
+              <p className="text-[13px] text-body">
+                Bring your passport and insurance card to the appointment. The interpreter
+                will meet you at the reception.
+              </p>
+            </div>
+
+            {/* Recent Queries */}
+            {history.length > 0 && (
+              <div className="rounded-xl border border-white/[0.08] bg-[#0D1015] overflow-hidden">
+                <div className="px-4 pt-4 pb-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                    Recent Queries
+                  </p>
+                </div>
+                <div className="divide-y divide-white/[0.04] max-h-[240px] overflow-y-auto">
                   {history.map((h: any) => (
                     <button
                       key={h.id}
                       onClick={() => handleSelectHistoryTask(h)}
-                      className="w-full text-left p-3 hover:bg-white/[0.02] transition-colors space-y-1 block group"
+                      className="w-full text-left p-3 hover:bg-white/[0.02] transition-colors space-y-1 group block"
                     >
-                      <p className="text-xs font-medium text-white/80 group-hover:text-white/95 truncate">
+                      <p className="text-[13px] text-white/70 group-hover:text-white/90 truncate">
                         {h.goal}
                       </p>
                       <div className="flex items-center justify-between text-[10px] text-white/30">
@@ -353,17 +543,25 @@ export default function AgentWorkspace() {
                           <Clock className="h-3 w-3" />
                           {new Date(h.createdAt).toLocaleDateString()}
                         </span>
-                        <Badge variant="outline" className="text-[8px] py-0 border-white/[0.08] px-1 bg-white/[0.02] text-white/45">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[9px] ${
+                            h.status === "COMPLETED"
+                              ? "bg-green-500/10 text-green-400"
+                              : h.status === "FAILED"
+                              ? "bg-red-500/10 text-red-400"
+                              : "bg-white/[0.06] text-white/40"
+                          }`}
+                        >
                           {h.status}
-                        </Badge>
+                        </span>
                       </div>
                     </button>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   )
